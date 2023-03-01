@@ -1,0 +1,124 @@
+/*
+  ==============================================================================
+
+    DJAudioPlayer.cpp
+    Created: 5 Feb 2023 11:48:51pm
+    Author:  krzys
+
+  ==============================================================================
+*/
+
+#include "DJAudioPlayer.h"
+
+//DJAudioPlayer.cpp
+DJAudioPlayer::DJAudioPlayer(juce::AudioFormatManager& _formatManager):formatManager(_formatManager)
+{
+    
+};
+
+DJAudioPlayer::~DJAudioPlayer()
+{
+    
+};
+
+
+//==============================================================================
+void DJAudioPlayer::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
+{
+    //formatManager.registerBasicFormats();
+    transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+    resampleSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+};
+
+void DJAudioPlayer::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
+{
+    //transportSource.getNextAudioBlock(bufferToFill);
+    resampleSource.getNextAudioBlock(bufferToFill);
+};
+
+void DJAudioPlayer::releaseResources()
+{
+    transportSource.releaseResources();
+    resampleSource.releaseResources();
+
+};
+
+
+
+void DJAudioPlayer::loadURL(juce::URL audioURL)
+{
+    auto* reader = formatManager.createReaderFor(audioURL.createInputStream(false));
+    if (reader != nullptr) // good file
+    {
+        std::unique_ptr<juce::AudioFormatReaderSource> newSource(new juce::AudioFormatReaderSource(reader, true));
+        transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
+        readerSource.reset(newSource.release());
+
+
+        //Play head functionality added - getting the length of the file and undating slider range
+        /*audioLengthSec = transportSource.getLengthInSeconds();
+        DBG("File length " << audioLengthSec);
+        posSlider.setRange(0, audioLengthSec);*/
+    }
+    else
+    {
+        DBG("ERROR loading a file!");
+    }
+};
+
+void DJAudioPlayer::setGain(double gain)
+{
+    if (gain < 0 || gain >1)
+    {
+        DBG("Gain out of range!     DJAudioPlayer::setGain");
+    }
+    else
+    {
+        transportSource.setGain(gain);
+    }
+};
+
+void DJAudioPlayer::setSpeed(double ratio)
+{
+    if (ratio< 0 || ratio >5)
+    {
+        DBG("Play speed ratio out of range!!!     DJAudioPlayer::setSpeed");
+    }
+    else
+    {
+        resampleSource.setResamplingRatio(ratio);
+    }
+};
+
+void DJAudioPlayer::setPosition(double posInSecs)
+{
+    transportSource.setPosition(posInSecs);
+};
+
+void DJAudioPlayer::setPositionRelative(double pos)
+{
+    if (pos < 0 || pos>1)
+    {
+        DBG("Position out of range!!!     DJAudioPlayer::setPositionRelative");
+    }
+    else
+    {
+        double posInSecs = transportSource.getLengthInSeconds() * pos;
+        setPosition(posInSecs);
+    }
+};
+
+
+void DJAudioPlayer::start()
+{
+    transportSource.start();
+};
+void DJAudioPlayer::stop()
+{
+    transportSource.stop();
+};
+
+double DJAudioPlayer::getPositionRelative()
+{
+   return transportSource.getCurrentPosition() / transportSource.getLengthInSeconds();
+}
