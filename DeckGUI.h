@@ -47,8 +47,8 @@ public:
 
 private:
 
-   juce::TextButton playButton{ "PLAY" };
-   juce::TextButton pauseButton{ "PAUSE" };
+   juce::TextButton stopButton{ "STOP" };
+   juce::TextButton playPauseButton{ "PLAY/PAUSE" };
    juce::Slider gainSlider;
    juce::Slider speedSlider;
    juce::Slider posSlider;
@@ -59,12 +59,10 @@ private:
 
    WaveformDisplay wavefromDisplay;
 
+
    /// MY ADDITIONS
    juce::TextButton fadeInPLAY{ "PLAY (FADE-IN)" };
    juce::TextButton fadeOutSTOP{ "STOP (FADE-OUT)" };
-
-   juce::ToggleButton fadeInToggle{ "FADE-IN" };
-   juce::ToggleButton fadeOutToggle{ "FADE-OUT" };
 
    juce::ToggleButton atStartAndEndOnly{ "Start/End only" };
 
@@ -81,11 +79,12 @@ private:
    
    double initialGainValue = 0.5;
    
-   double lastGainInValue;
-   double lastGainOutValue;
+   double lastGainInValue = gainSlider.getValue();
+   double lastGainOutValue = gainSlider.getValue();
    double gainStep;
    bool approachingEnd{ false };
-
+   
+   void stopAndReset();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)
 };
