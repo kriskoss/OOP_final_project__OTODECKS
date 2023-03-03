@@ -26,8 +26,9 @@ PlaylistComponent::PlaylistComponent()
    trackTitles.push_back("Track 6");
 
    tableComponet.getHeader().addColumn("LEFT", 1, 80);
-   tableComponet.getHeader().addColumn("Track title", 2, 400);
-   tableComponet.getHeader().addColumn("RIGHT", 3, 80);
+   tableComponet.getHeader().addColumn("LOAD", 2, 80);
+   tableComponet.getHeader().addColumn("Track title", 3, 400);
+   tableComponet.getHeader().addColumn("RIGHT", 4, 80);
    //tableComponet.getHeader().addColumn("Artists", 1, 400);
    tableComponet.setModel(this);
    addAndMakeVisible(tableComponet);
@@ -104,17 +105,37 @@ juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber,
                                                             bool isRowSelected,
                                                             juce::Component* existingComponentToUpdate)
 {
+   // PLAY on LEFT deck
    if (columnId == 1)
    {
       if (existingComponentToUpdate == nullptr)
       {
          juce::TextButton* btn = new juce::TextButton{ "PLAY-L" };
+         juce::String id{ std::to_string(rowNumber) };
+         btn->setComponentID(id);
+
          btn->addListener(this);
          existingComponentToUpdate = btn;
       }
    }
 
-   if (columnId == 3)
+   if (columnId == 2)
+   {
+      if (existingComponentToUpdate == nullptr)
+      {
+         juce::TextButton* btn = new juce::TextButton{ "LOAD" };
+         juce::String id{ std::to_string(rowNumber) };
+         btn->setComponentID(id);
+
+         btn->addListener(this);
+         existingComponentToUpdate = btn;
+      }
+   }
+
+
+
+   // PLAY on RIGHT deck
+   if (columnId == 4)
    {
       if (existingComponentToUpdate == nullptr)
       {

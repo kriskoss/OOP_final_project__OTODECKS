@@ -48,23 +48,42 @@ void WaveformDisplay::paint (juce::Graphics& g)
           0,
           1.0f
        );
-       int playheadWidth = getWidth() / 100;
-       int posXRelative = position * getWidth();
+       int playheadWidth = getWidth() / 200;
+       
+       int posXRelative = 0;
+       // Prevents negative values
+       if (position * getWidth() >= 0)
+       {
+          posXRelative = position * getWidth();
+       }
 
        // Playhead look
-       g.setColour(juce::Colours::pink);
-       g.drawRect(posXRelative, 0, playheadWidth, getHeight());
+       g.setColour(juce::Colours::black);
+       g.fillRect(posXRelative, 0, playheadWidth, getHeight());
        
-       //Area already played
-       g.setColour(juce::Colours::green);
-       g.drawRect(0, 2, posXRelative, 2);
+       //===== Area already played =====
+       g.saveState();
        
-       //Area to be played
-       g.setColour(juce::Colours::red);
-       g.drawRect(posXRelative + playheadWidth, 2, getWidth() - posXRelative - playheadWidth, 2);
+       g.setColour(juce::Colours::grey);
+       g.setOpacity(0.3);
+       g.fillRect(0, 2, posXRelative, getHeight());
+       
+       //=====Area to be played====
+       
+       g.setColour(juce::Colours::darkred);
+       // Checks if rect after the play head is less then 0 
+       int widthAfter = getWidth() - posXRelative - playheadWidth;
+       if (widthAfter < 0)
+       {
+          widthAfter = 0;
+       }
 
-       // Resetting colour
-       g.setColour(juce::Colours::yellow);
+       g.fillRect(posXRelative + playheadWidth, 5, widthAfter, 3);
+       
+       g.restoreState();
+       //^^^^^^^^^^^^^^^^^END^^^^^^^^^^^^
+       
+       
     }
     else
     {
@@ -117,3 +136,12 @@ void WaveformDisplay::setPositionRelative(double pos)
    }
 }
 
+
+bool WaveformDisplay::checkIfFileLoaded()
+{
+   if (fileLoaded)
+   {
+      return true;
+   }
+   return false;
+}

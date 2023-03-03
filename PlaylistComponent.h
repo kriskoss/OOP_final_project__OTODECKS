@@ -48,6 +48,7 @@ public:
                                         juce::Component* existingComponentToUpdate);
 
     void buttonClicked(juce::Button* button) override;
+
 private:
 
    juce::TableListBox tableComponet;

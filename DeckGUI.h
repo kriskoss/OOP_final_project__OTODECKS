@@ -37,6 +37,7 @@ public:
    void resized() override;
 
    void buttonClicked(juce::Button* button) override;
+
    void sliderValueChanged(juce::Slider* slider) override;
    
    bool isInterestedInFileDrag(const juce::StringArray& files) override;
@@ -47,7 +48,7 @@ public:
 private:
 
    juce::TextButton playButton{ "PLAY" };
-   juce::TextButton stopButton{ "STOP" };
+   juce::TextButton pauseButton{ "PAUSE" };
    juce::Slider gainSlider;
    juce::Slider speedSlider;
    juce::Slider posSlider;
@@ -57,6 +58,34 @@ private:
    DJAudioPlayer *player;  
 
    WaveformDisplay wavefromDisplay;
+
+   /// MY ADDITIONS
+   juce::TextButton fadeInPLAY{ "PLAY (FADE-IN)" };
+   juce::TextButton fadeOutSTOP{ "STOP (FADE-OUT)" };
+
+   juce::ToggleButton fadeInToggle{ "FADE-IN" };
+   juce::ToggleButton fadeOutToggle{ "FADE-OUT" };
+
+   juce::ToggleButton atStartAndEndOnly{ "Start/End only" };
+
+   float fadeInTime = 5; //seconds
+   float fadeOutTime = fadeInTime;
+
+   int timerStep = 1000; // milliseconds
    
+   int fadeInSteps = fadeInTime*1000/timerStep; // converitng fadeInTime into number of steps of the counter
+   int fadeOutSteps = fadeInSteps;
+
+   int fadeInCounter = 0; // the actual counter
+   int fadeOutCounter = 0; // the actual counter
+   
+   double initialGainValue = 0.5;
+   
+   double lastGainInValue;
+   double lastGainOutValue;
+   double gainStep;
+   bool approachingEnd{ false };
+
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)
 };

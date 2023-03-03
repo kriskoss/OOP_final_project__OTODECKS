@@ -38,7 +38,7 @@ class MainComponent : public juce::AudioAppComponent
         DeckGUI deckGUI1{&player1, formatManager, thumbCache};     
         
         DJAudioPlayer player2{formatManager};
-        DeckGUI deckGUI2{&player2, formatManager, thumbCache };
+        DeckGUI deckGUI2{&player2, formatManager, thumbCache};
 
         juce::MixerAudioSource mixerSource;
 

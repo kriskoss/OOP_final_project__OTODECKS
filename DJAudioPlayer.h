@@ -32,6 +32,7 @@ public:
     void setSpeed(double ratio);
     void setPosition(double posInSecs);
     void setPositionRelative(double pos);
+    double timeToEnd();
 
     void start();
     void stop();
@@ -41,6 +42,8 @@ public:
 
     juce::FileChooser fChooser{ "Select a file..." };
 
+    /**Check if the player is currently playing any music*/
+    bool isPlaying();
 
 private:
     juce::AudioFormatManager& formatManager;

@@ -13,7 +13,8 @@
 //DJAudioPlayer.cpp
 DJAudioPlayer::DJAudioPlayer(juce::AudioFormatManager& _formatManager):formatManager(_formatManager)
 {
-    
+   
+   
 };
 
 DJAudioPlayer::~DJAudioPlayer()
@@ -25,15 +26,14 @@ DJAudioPlayer::~DJAudioPlayer()
 //==============================================================================
 void DJAudioPlayer::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
-    //formatManager.registerBasicFormats();
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
     resampleSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
 };
 
 void DJAudioPlayer::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    //transportSource.getNextAudioBlock(bufferToFill);
-    resampleSource.getNextAudioBlock(bufferToFill);
+   
+   resampleSource.getNextAudioBlock(bufferToFill);
 };
 
 void DJAudioPlayer::releaseResources()
@@ -54,11 +54,6 @@ void DJAudioPlayer::loadURL(juce::URL audioURL)
         transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
         readerSource.reset(newSource.release());
 
-
-        //Play head functionality added - getting the length of the file and undating slider range
-        /*audioLengthSec = transportSource.getLengthInSeconds();
-        DBG("File length " << audioLengthSec);
-        posSlider.setRange(0, audioLengthSec);*/
     }
     else
     {
@@ -121,4 +116,15 @@ void DJAudioPlayer::stop()
 double DJAudioPlayer::getPositionRelative()
 {
    return transportSource.getCurrentPosition() / transportSource.getLengthInSeconds();
+}
+
+double DJAudioPlayer::timeToEnd()
+{
+   return transportSource.getLengthInSeconds() - transportSource.getCurrentPosition();
+}
+
+bool DJAudioPlayer::isPlaying()
+{
+   
+   return transportSource.isPlaying();
 }

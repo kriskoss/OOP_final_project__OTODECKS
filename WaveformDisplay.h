@@ -36,6 +36,7 @@ class WaveformDisplay : public juce::Component,
        /** set the relative position of the playhead*/
        void setPositionRelative(double pos);
 
+       bool checkIfFileLoaded(); /** returns true if file is loaded, fales otherwise*/
    private:
 
       juce::AudioThumbnail audioThumb;
