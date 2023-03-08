@@ -111,7 +111,7 @@ void DeckGUI::resized()
 void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainComponent.cpp
 {
    DBG("Button clicked!");
-   
+
    if (button == &playPauseButton && wavefromDisplay.checkIfFileLoaded())
    {
       if (!player->isPlaying()) //PLAY
@@ -217,79 +217,6 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
           }
        }
    }
-
-   //=====================
-
-   //if (button == &fadeInPLAY && !player->isPlaying())
-   //{
-   //   DBG("   * playButton!   MainComponent::buttonClicked");
-   //   player->start();
-
-   //   // FADE IN works only if file load is complete and FADE IN ticked
-   //   if (fadeInToggle.getToggleState() && wavefromDisplay.checkIfFileLoaded())
-   //   {
-   //      // FADE IN activation logic - runs only when FADE-IN ticked, or if at the beginning of the file in case START/END only ticked
-
-   //      if ((atStartAndEndOnly.getToggleState() && player->getPositionRelative() == 0) ||
-   //         !atStartAndEndOnly.getToggleState())
-   //      {
-   //         lastGainInValue = gainSlider.getValue(); // Storing lastGainInValue before play button clicked
-
-   //         gainStep = lastGainInValue / fadeInSteps; // Calculates the amount of which the gain will be increased at each step of the fade in
-   //         if (fadeOutCounter > 0) // stops FADE OUT in case FADE IN itialized when the FADE OUT is running 
-   //         {
-   //            fadeOutCounter = 0;
-   //            gainStep = abs(lastGainInValue - lastGainOutValue) / fadeInSteps;
-   //            lastGainInValue = lastGainOutValue;
-
-   //         }
-   //         else
-   //         {
-   //            gainSlider.setValue(0);
-   //         }
-   //         DBG("DeckGUI::buttonClicked -> playButton:  AT THE START " + std::to_string(player->getPositionRelative()));
-   //         fadeInCounter = fadeInSteps;
-
-
-
-
-   //      }
-   //   }
-
-
-   //}
-
-   //if (button == &fadeOutSTOP)
-   //{
-   //   DBG("   * stopButton!    MainComponent::buttonClicked");
-   //   if (fadeOutToggle.getToggleState() && wavefromDisplay.checkIfFileLoaded() && fadeOutCounter == 0)
-   //   {
-   //      lastGainOutValue = gainSlider.getValue(); // Storing lastGainOutValue before play button clicked
-
-   //      gainStep = lastGainOutValue / fadeOutSteps; // Calculates the amount of which the gain will be increased at each step of the fade in
-   //      DBG("DeckGUI::buttonClicked -> playButton:  fadeOutSteps:" + fadeOutSteps);
-
-   //      DBG("DeckGUI::buttonClicked -> playButton:  AT THE START " + std::to_string(player->getPositionRelative()));
-   //      fadeOutCounter = fadeOutSteps;
-
-   //      if (fadeOutCounter == 0)
-   //      {
-   //         gainSlider.setValue(lastGainOutValue);
-   //         player->stop();
-   //      }
-   //   }
-   //   else
-   //   {
-   //      {
-   //         if (fadeOutCounter == 0)
-   //            player->stop();
-   //      }
-   //   }
-   //}
-
-   //=====================
-
-
 
 
    if (button == &loadButton)
@@ -416,12 +343,7 @@ void DeckGUI::timerCallback()
 
 
       // END FADE-OUT
-      if (player->timeToEnd() > 0)
-      {
-         DBG("DecKGUI::timecaller   test" + std::to_string(player->timeToEnd()));
-      }
-      
-      // FADE OUT initialization at the END
+         // FADE OUT initialization at the END
       if (player->timeToEnd()<fadeOutTime && player->timeToEnd()>0 && atStartAndEndOnly.getToggleState()&& !approachingEnd)
       {
          approachingEnd = true;
@@ -447,4 +369,12 @@ void DeckGUI::stopAndReset()
 
    player->stop();
    playPauseButton.setButtonText("PLAY/PAUSE");
+}
+
+void DeckGUI::loadIncomingFile(juce::File & sentFile)
+{
+   juce::URL chosenFile(sentFile);
+   player->loadURL(juce::URL{ chosenFile });
+   wavefromDisplay.loadURL(juce::URL{ chosenFile });
+   
 }

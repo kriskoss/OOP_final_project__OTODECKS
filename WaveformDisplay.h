@@ -1,21 +1,24 @@
-   /*
-     ==============================================================================
+/*
+   ==============================================================================
 
-       WaveformDisplay.h
-       Created: 24 Feb 2023 2:55:55pm
-       Author:  krzys
+      WaveformDisplay.h
+      Created: 24 Feb 2023 2:55:55pm
+      Author:  krzys
 
-     ==============================================================================
-   */
+   ==============================================================================
+*/
 
-   #pragma once
+#pragma once
 
-   #include <JuceHeader.h>
+#include <JuceHeader.h>
+#include <vector>
+#include <iostream>
+#include <queue>
 
-   //==============================================================================
-   /*
-   */
-   //WaveformDisplay.h
+//==============================================================================
+/*
+*/
+//WaveformDisplay.h
 class WaveformDisplay : public juce::Component,
                         public juce::ChangeListener
    {
@@ -32,15 +35,23 @@ class WaveformDisplay : public juce::Component,
        void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
        void loadURL(juce::URL audioURL);
+       void loadURL(juce::URL audioURL, int trackNum);
        
        /** set the relative position of the playhead*/
        void setPositionRelative(double pos);
 
        bool checkIfFileLoaded(); /** returns true if file is loaded, fales otherwise*/
-   private:
+       bool checkIfThumbnailFullyLoaded();
+       bool newFileLoaded;
 
+       //std::vector<juce::AudioThumbnail> thumbnails;
+       std::queue<int> tracksBeingLoaded;
+
+       int thumbnailLoadProgress = 0;
+   private:
+      bool anyFileLoaded;
       juce::AudioThumbnail audioThumb;
-      bool fileLoaded;
+      
       double position;
 
        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WaveformDisplay)

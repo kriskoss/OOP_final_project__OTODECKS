@@ -5,6 +5,7 @@
 #include "DJAudioPlayer.h"
 #include "DeckGUI.h"    
 #include "PlaylistComponent.h"
+
     //==============================================================================
     /*
         This component lives inside our window, and this is where you should put all
@@ -42,7 +43,8 @@ class MainComponent : public juce::AudioAppComponent
 
         juce::MixerAudioSource mixerSource;
 
-        PlaylistComponent playlistComponent;
+        DJAudioPlayer playerPL{ formatManager };
+        PlaylistComponent playlistComponent{ &playerPL,&deckGUI1,&deckGUI2, formatManager,thumbCache };
         
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
     };

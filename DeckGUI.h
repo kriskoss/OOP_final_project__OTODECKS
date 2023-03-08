@@ -44,6 +44,9 @@ public:
    void filesDropped(const juce::StringArray& files, int x, int y) override;
 
    void timerCallback() override;
+   
+   /** loads file sent from the playlist into the deck*/
+   void loadIncomingFile(juce::File & sentFile); 
 
 private:
 
@@ -84,6 +87,7 @@ private:
    double gainStep;
    bool approachingEnd{ false };
    
+   /**Stops the player and reset the the current posiotion to 0 */
    void stopAndReset();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)

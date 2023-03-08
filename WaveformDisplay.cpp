@@ -16,10 +16,11 @@
 WaveformDisplay::WaveformDisplay(juce::AudioFormatManager& formatManagerToUse,
                                  juce::AudioThumbnailCache& cacheToUse):
                                  audioThumb(1000,formatManagerToUse,cacheToUse),
-                                 fileLoaded(false),
+                                 anyFileLoaded(false),
                                  position(0)
 {
    audioThumb.addChangeListener(this);
+
 }
 
 WaveformDisplay::~WaveformDisplay()
@@ -39,7 +40,7 @@ void WaveformDisplay::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (juce::Colours::yellow);
-    if (fileLoaded)
+    if (anyFileLoaded)
     {
        audioThumb.drawChannel(g,
           getLocalBounds(),
@@ -48,6 +49,7 @@ void WaveformDisplay::paint (juce::Graphics& g)
           0,
           1.0f
        );
+       
        int playheadWidth = getWidth() / 200;
        
        int posXRelative = 0;
@@ -107,23 +109,30 @@ void WaveformDisplay::resized()
 void WaveformDisplay::loadURL(juce::URL audioURL)
 {
    audioThumb.clear();
-   fileLoaded = audioThumb.setSource(new juce::URLInputSource(audioURL));
-   
-   if (fileLoaded)
+   anyFileLoaded = audioThumb.setSource(new juce::URLInputSource(audioURL));
+   newFileLoaded = anyFileLoaded; // Required for updating the Playlist when new file added 
+   if (newFileLoaded)
    {
-      DBG("wfd: loaded!");
+      //DBG("WaveformDisplay::loadURL: new file loaded! -- Number of thumbnails: " + std::to_string(thumbnails.size()));
+
    }
    else
    {
-      DBG("wfd: NOT loaded!");
+      DBG("WaveformDisplay::loadURL: NEW FILE FAILDED TO LOAD !");
    }
 
 }
-
+void WaveformDisplay::loadURL(juce::URL audioURL, int _trackNum)
+{
+   loadURL(audioURL);
+   tracksBeingLoaded.push(_trackNum);
+   DBG("WaveformDisplay::loadURL (2): LODADING TRACK " + std::to_string(_trackNum));
+}
 
 void WaveformDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-   DBG("wfd: change received!");
+   thumbnailLoadProgress =  audioThumb.getProportionComplete()*100;
+   DBG("wfd: change received! - progress" + std::to_string(thumbnailLoadProgress )+ "%");
    repaint();
 }
 
@@ -139,9 +148,19 @@ void WaveformDisplay::setPositionRelative(double pos)
 
 bool WaveformDisplay::checkIfFileLoaded()
 {
-   if (fileLoaded)
+   if (anyFileLoaded)
    {
       return true;
    }
    return false;
+}
+
+bool WaveformDisplay::checkIfThumbnailFullyLoaded()
+{
+   if (audioThumb.isFullyLoaded())
+   {
+      thumbnailLoadProgress = 0;
+   }
+
+   return audioThumb.isFullyLoaded();
 }
