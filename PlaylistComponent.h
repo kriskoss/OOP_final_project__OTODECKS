@@ -16,7 +16,7 @@
 #include "DeckGUI.h"
 
 #include "WaveformDisplay.h"
-
+#include <queue>
 
 
 //==============================================================================
@@ -26,7 +26,8 @@
 class PlaylistComponent  : public juce::Component,
                            public juce::TableListBoxModel,
                            public juce::Button::Listener,
-                           public juce::Timer
+                           public juce::Timer,
+                           public juce::TextEditor::Listener
 {
 public:
    PlaylistComponent(DJAudioPlayer* _player,
@@ -52,35 +53,58 @@ public:
       // * Button
     void buttonClicked(juce::Button* button) override;
     // ========================================
-    
-    DJAudioPlayer* player;
-    DeckGUI* deck1;
-    DeckGUI* deck2;
 
-    WaveformDisplay wavefromDisplay;
+      // * TextEditor
+    void textEditorTextChanged(juce::TextEditor& tc);
 
-    std::string addFileButtonText = "Select file...";
-    juce::TextButton addFileButton{ addFileButtonText };
-    
+    juce::SparseSet<int> hiddenRows;
+
+     
 private:
+   DJAudioPlayer* player;
+   DeckGUI* deck1;
+   DeckGUI* deck2;
+
+   WaveformDisplay wavefromDisplay;
    
+   juce::TableListBox tableComponet;
+   
+   std::string addFileButtonText = "Select file...";
+   juce::TextButton addFileButton{ addFileButtonText };
+   juce::TextButton searchButton{ "SEARCH TEST"};
+   juce::TextButton loadedItemsButton{ "SHOW LOADED ITEMS"};
+   juce::TextEditor searchField{"SEARCH PLAYLIST"};
+
 
    void timerCallback() override;
    int timerStep = 500;
    
    
-   juce::TableListBox tableComponet;
+   std::vector<std::string> trackTitles; 
+   std::vector<std::string> trackTitlesOriginal; 
+   std::vector<std::string> searchedTrackTitles{};
    
-   std::vector<std::string> trackTitles;
-   bool newFileAdded = false; /** USED ONLY FOR UPDATING THE PLAYLIST - It is true only when new file was added to the playlist - becomes FALSE as soon as the PLAYLIST component display updated*/
-   bool loadingThumbnail = false; /** TRUE ONLY WHEN THUMBNAIL LOADING IS IN PROGRESS */
-   // Helpers
-   void sendFileData(juce::File& chosenFile);
-   std::vector<juce::File> loadedFiles; // WIP - it is going to be a vector of loaded files including thumbnail and meta data
+
+   std::vector<juce::File> loadedFiles; 
+   std::vector<juce::File> searchedloadedFiles; 
+   std::vector<juce::File> loadedFilesOriginal{};
    
    
+   std::vector<std::string> paths; 
+   std::queue<std::string> toBeUploadedQueue;
+
+   //FLAGS
+   bool newFileAdded = false;       /** USED ONLY FOR UPDATING THE PLAYLIST - It is true only when new file was added to the playlist - becomes FALSE as soon as the PLAYLIST component display updated*/
+   bool loadingThumbnail = false;   /** TRUE ONLY WHEN THUMBNAIL LOADING IS IN PROGRESS */
    
    
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlaylistComponent)
+      
+      // HELPERS
+   
+   void sendFileData(juce::File& chosenFile); /** Sends selected file to be stored and processed to be ready to use by decks*/
+   std::queue<std::string> populateTheQueue(std::vector<std::string> vector_of_strings);  /** Transfers data from the vector to the queue */
+   
+
+   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlaylistComponent)
 };
