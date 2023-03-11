@@ -57,8 +57,6 @@ public:
       // * TextEditor
     void textEditorTextChanged(juce::TextEditor& tc);
 
-    juce::SparseSet<int> hiddenRows;
-
      
 private:
    DJAudioPlayer* player;
@@ -70,10 +68,10 @@ private:
    juce::TableListBox tableComponet;
    
    std::string addFileButtonText = "Select file...";
-   juce::TextButton addFileButton{ addFileButtonText };
-   juce::TextButton searchButton{ "SEARCH TEST"};
-   juce::TextButton loadedItemsButton{ "SHOW LOADED ITEMS"};
-   juce::TextEditor searchField{"SEARCH PLAYLIST"};
+   juce::TextButton loadFilesButton{ addFileButtonText };
+   juce::TextEditor searchField{"Search"};
+   juce::TextButton clearSearchButton{"Reset Search"};
+   juce::TextButton clearPlaylistButton{ "CLEAR THE PLAYLIST" };
 
 
    void timerCallback() override;
@@ -81,13 +79,13 @@ private:
    
    
    std::vector<std::string> trackTitles; 
-   std::vector<std::string> trackTitlesOriginal; 
+   std::vector<std::string> trackTitlesMain; 
    std::vector<std::string> searchedTrackTitles{};
    
 
    std::vector<juce::File> loadedFiles; 
    std::vector<juce::File> searchedloadedFiles; 
-   std::vector<juce::File> loadedFilesOriginal{};
+   std::vector<juce::File> loadedFilesMain{};
    
    
    std::vector<std::string> paths; 
@@ -105,6 +103,18 @@ private:
    void sendFileData(juce::File& chosenFile); /** Sends selected file to be stored and processed to be ready to use by decks*/
    std::queue<std::string> populateTheQueue(std::vector<std::string> vector_of_strings);  /** Transfers data from the vector to the queue */
    
+   void saveThePlaylist();/** Saves the playlist to the disk*/
+   void updateAndSavePlaylistData(); /** Update the playlist data and stores it on the disk*/
+   void loadThePlaylist();
+
+   std::string loadToDeck1ID = "IDloadToDeck1";
+   std::string loadToDeck2ID = "IDloadToDeck2";
+   std::string removeTrackID = "REMOVE";
+
+   juce::Component* createButtonInsideCell(int selectedColumn, std::string buttonLabel,  std::string idElement, juce::Component* existingComponentToUpdate, int rowNumber, int columnId);
+   void createClearPlaylistAlertWindow();
+   void addNewFiles();
+
 
    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlaylistComponent)
 };

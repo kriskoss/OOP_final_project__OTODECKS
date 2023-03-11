@@ -111,10 +111,12 @@ void WaveformDisplay::loadURL(juce::URL audioURL)
    audioThumb.clear();
    anyFileLoaded = audioThumb.setSource(new juce::URLInputSource(audioURL));
    newFileLoaded = anyFileLoaded; // Required for updating the Playlist when new file added 
+
+   
+   
    if (newFileLoaded)
    {
       //DBG("WaveformDisplay::loadURL: new file loaded! -- Number of thumbnails: " + std::to_string(thumbnails.size()));
-
    }
    else
    {
@@ -132,7 +134,7 @@ void WaveformDisplay::loadURL(juce::URL audioURL, int _trackNum)
 void WaveformDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
    thumbnailLoadProgress =  audioThumb.getProportionComplete()*100;
-   DBG("wfd: change received! - progress" + std::to_string(thumbnailLoadProgress )+ "%");
+   //DBG("wfd: change received! - progress" + std::to_string(thumbnailLoadProgress )+ "%");
    repaint();
 }
 

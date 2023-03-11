@@ -10,6 +10,8 @@
 
 #include <JuceHeader.h>
 #include "PlaylistComponent.h"
+#include <iostream>
+#include <fstream>
 
 
 //==============================================================================
@@ -26,26 +28,26 @@ PlaylistComponent::PlaylistComponent(DJAudioPlayer* _player,DeckGUI* _deck1,Deck
    tableComponet.getHeader().addColumn("Track title", 3, 400);
    tableComponet.getHeader().addColumn("RIGHT", 4, 80);
    tableComponet.getHeader().addColumn("Remove", 2, 80);
+
+   
+
    tableComponet.setModel(this);
    
    addAndMakeVisible(tableComponet);
-   addAndMakeVisible(addFileButton);
-   addAndMakeVisible(searchButton);
-   addAndMakeVisible(loadedItemsButton);
+   addAndMakeVisible(loadFilesButton);
    addAndMakeVisible(searchField);
+   addAndMakeVisible(clearSearchButton);
+   addAndMakeVisible(clearPlaylistButton);
 
-   addFileButton.addListener(this);
-   searchButton.addListener(this);
-   loadedItemsButton.addListener(this);
-   loadedItemsButton.addListener(this);
+   loadFilesButton.addListener(this);
    searchField.addListener(this);
+   clearSearchButton.addListener(this);
+   clearPlaylistButton.addListener(this);
 
-   paths = { "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/stomper_reggae_bit.mp3",
-               "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/fast_melody_thing.mp3",
-               "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/twindrive.mp3",
-               "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/stomper1.mp3",
-               "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/fast_melody_regular_drums.mp3",
-               "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/bleep_2.mp3" };
+   searchField.setTextToShowWhenEmpty("Search", juce::Colours::grey);
+
+   loadThePlaylist(); // Loads the playlist from hard drive
+   
    toBeUploadedQueue = populateTheQueue(paths);
    
    startTimer(timerStep);
@@ -59,13 +61,6 @@ PlaylistComponent::~PlaylistComponent()
 
 void PlaylistComponent::paint (juce::Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
-
-       You should replace everything in this method with your own
-       drawing code..
-    */
-
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (juce::Colours::grey);
@@ -79,16 +74,12 @@ void PlaylistComponent::paint (juce::Graphics& g)
 
 void PlaylistComponent::resized()
 {
-   DBG("PlaylistComponent::resized() CALLED!");
-
-   // This method is where you should set the bounds of any child
-    // components that your component contains..
-   int rowH = getHeight() / 10;
-   addFileButton.setBounds(0,0,getWidth(), rowH);
+   int rowH = getHeight() / 9;
+   loadFilesButton.setBounds(0,0,getWidth(), rowH);
    tableComponet.setBounds(0, rowH, getWidth(), 7*rowH);
-   searchButton.setBounds(0, 8*rowH, getWidth()/2, rowH);
-   loadedItemsButton.setBounds(getWidth()/2, 8*rowH, getWidth() / 2, rowH);
-   searchField.setBounds(0, 9*rowH, getWidth(), 1 * rowH);
+   searchField.setBounds(0, 8*rowH, getWidth()/3, rowH);
+   clearSearchButton.setBounds(getWidth()/3, 8 * rowH, getWidth() / 6, rowH);
+   clearPlaylistButton.setBounds(getWidth()*3/4, 8*rowH, getWidth() / 4, rowH);
 }
 
 int PlaylistComponent::getNumRows()
@@ -120,51 +111,14 @@ void PlaylistComponent::paintCell(juce::Graphics& g,int rowNumber,int columnId,i
 
 juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber, int columnId,bool isRowSelected,juce::Component* existingComponentToUpdate)
 {
-   // PLAY on LEFT deck
-   if (columnId == 1) 
-   {
-      if (existingComponentToUpdate == nullptr)
-      {
-         juce::TextButton* btn = new juce::TextButton{ "PLAY-L" };
-         //juce::String id{ std::to_string(rowNumber) };
-         juce::String id{ "PLAY-L," + std::to_string(rowNumber)};
-         btn->setComponentID(id);
+   // Create "Load to Deck1" buttons
+      existingComponentToUpdate = createButtonInsideCell(1,"Load to Deck1", loadToDeck1ID, existingComponentToUpdate, rowNumber, columnId);
 
-         btn->addListener(this);
-         existingComponentToUpdate = btn;
-      }
-   }
+   // Create "REMOVE" buttons
+      existingComponentToUpdate = createButtonInsideCell(2,"REMOVE", removeTrackID, existingComponentToUpdate, rowNumber, columnId);
 
-   // REMOVE column
-   if (columnId == 2)
-   {
-      if (existingComponentToUpdate == nullptr)
-      {
-         juce::TextButton* btn = new juce::TextButton{ "REMOVE" };
-         //juce::String id{ std::to_string(rowNumber) };
-         juce::String id{ "REMOVE," + std::to_string(rowNumber)};
-         btn->setComponentID(id);
-
-         btn->addListener(this);
-         existingComponentToUpdate = btn;
-      }
-   }
-
-   // PLAY on RIGHT deck
-   if (columnId == 4)
-   {
-      if (existingComponentToUpdate == nullptr)
-      {
-         juce::TextButton* btn = new juce::TextButton{ "PLAY-R" };
-         //juce::String id{std::to_string(rowNumber)};
-         juce::String id{ "PLAY-R," + std::to_string(rowNumber) };
-         btn->setComponentID(id);
-
-         btn->addListener(this);
-         existingComponentToUpdate = btn;
-      }
-   }
-
+   // Create "Load to Deck2" buttons
+      existingComponentToUpdate = createButtonInsideCell(4,"Load to Deck2", loadToDeck2ID, existingComponentToUpdate, rowNumber, columnId);
    
    return existingComponentToUpdate;
    
@@ -173,127 +127,63 @@ juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber, int c
 
 void PlaylistComponent::buttonClicked(juce::Button* button)
 {
-   if (button == &loadedItemsButton)
+   // CLEAR SEARCH button
+   if (button == &clearSearchButton)
    {
-      DBG("\nPlaylistComponent::buttonClicked -> LOADED ITEMS: ");
-      for (int i = 0; i < loadedFiles.size(); ++i)
-      {
-         DBG("PlaylistComponent::buttonClicked -> loadedItems: "  + loadedFiles[i].getFileName() + "\t   [" + std::to_string(i) + "]");
+      searchField.setText("");
+   }
+   
+   //CLEAR PLAYLIST button
+   if (button == &clearPlaylistButton && !loadedFiles.empty()) // ACTIVE ONLY WHEN: there are any files loaded already
+   {
+      createClearPlaylistAlertWindow();
+   }
+   
+   // LOAD FILES button 
+   if (button == &loadFilesButton && loadingThumbnail==false) // ACTIVE ONLY WHEN : previous files upload complete
+   {  
+      addNewFiles();
+   }
+
+   
+   //ANY BUTTON INSIDE THE TABLE PRESSED
+      
+   std::string id = button->getComponentID().toStdString();
+   DBG("PlaylistComponent::buttonClicked - ComponentID: " + id);
+      
+   std::vector<std::string> idTokenised = Helpers::tokenise(id, ',');
+   for (int i=0;i<idTokenised.size();++i)
+   {
+      if (i == 0) {
+         if (idTokenised[i] == removeTrackID && !loadingThumbnail) // CELL's "REMOVE" button pressed - button is not active when thumbnail is being genereated
+         {
+            DBG("PlaylistComponent::buttonClicked: removing element: " + idTokenised[1]);
+            trackTitles.erase(trackTitles.begin() + std::stoi(idTokenised[1]));
+            loadedFiles.erase(loadedFiles.begin() + std::stoi(idTokenised[1]));
+            tableComponet.updateContent();
+
+            updateAndSavePlaylistData();
+               
+         }
       }
-
-
-      DBG("\nPlaylistComponent::buttonClicked -> TRACKTITLES: ");
-      for (int i = 0; i < trackTitles.size(); ++i)
+      // LOAD playlist item to DECK 1
+      if (idTokenised[i] == loadToDeck1ID)
       {
-         DBG("PlaylistComponent::buttonClicked -> trackTitles: [" + std::to_string(i) + "]  "+ trackTitles[i]  );
+         DBG("PlaylistComponent::buttonClicked: sending file: "+ idTokenised[1] + " to DECK1: " );
+         int index = std::stoi(idTokenised[1]);
+         deck1->loadIncomingFile(loadedFiles[index]);
+            
+      }
+      // LOAD playlist item to DECK 2
+      if (idTokenised[i] == loadToDeck2ID)
+      {
+         DBG("PlaylistComponent::buttonClicked: sending file: " + idTokenised[1] + "to DECK2: ");
+         int index = std::stoi(idTokenised[1]);
+         deck2->loadIncomingFile(loadedFiles[index]);
+
       }
    }
    
-   if (button == &searchButton)
-   {
-      //hiddenRows.addRange(juce::Range<int>(0, 1));
-      //hiddenRows.addRange(juce::Range<int>(2, 3));
-      //tableComponet.setSelectedRows(hiddenRows);
-      
-      // STORING FULL PLAYLIST DATA
-      
-      searchedTrackTitles.clear();
-      searchedloadedFiles.clear();
-      
-      for (int i=0; i<trackTitles.size();++i)
-      {
-         if (i%2==0)
-         { 
-            searchedTrackTitles.push_back(trackTitles[i]);
-            searchedloadedFiles.push_back(loadedFiles[i]);
-         }
-      }
-      trackTitles = searchedTrackTitles;
-      loadedFiles = searchedloadedFiles;
-
-      std::vector<std::string> searchedTrackTitles;
-      tableComponet.updateContent();
-      int tr = 0;
-      for (std::string s:trackTitles)
-      {
-         tr++;
-         DBG("PlaylistComponent::buttonClicked -> searchBUTTON: track: " + s  + "  " + std::to_string(tr)); 
-      }
-      
-   }
-   if (button == &addFileButton && loadingThumbnail==false)
-   {  // ADDBUTTON PRESSED
-      
-      DBG("PlaylistComponent::buttonClicked ADDING ITEM");
-      
-      wavefromDisplay.newFileLoaded = false;
-      newFileAdded = true;
-
-      if (!loadedFilesOriginal.empty() && !trackTitles.empty())
-      {
-         trackTitles = trackTitlesOriginal;
-         loadedFiles = loadedFilesOriginal;
-         tableComponet.updateContent();
-      }
-      
-      if (false) /// LOAD SPECIFIC FILE ==== WIP - FOR DEVELOPMENT ONLY - load file automatically!!!!!!!!!
-      {
-         std::string path = "C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/aon_inspired.mp3";
-         juce::File chosenFile(path);
-         sendFileData(chosenFile);
-      }
-      else  // FILE CHOOSER 
-      {
-         auto fileChooserFlags = juce::FileBrowserComponent::canSelectFiles;// - configure the dialogue
-         player->fChooser.launchAsync(fileChooserFlags, [this](const juce::FileChooser& chooser)// LAMBDA FUNCTION- launch out of the main thread
-            {
-               juce::File chosenFile = chooser.getResult();
-               sendFileData(chosenFile);
-            }
-         );
-      }
-   }
-   else
-   {  //ANY BUTTON INSIDE THE TABLE PRESSED
-      //int id = std::stoi(button->getComponentID().toStdString());
-      //DBG("PlaylistComponent::buttonClicked - clicked" + trackTitles[id] + ", ComponentID " + id);
-      
-      std::string id = button->getComponentID().toStdString();
-      DBG("PlaylistComponent::buttonClicked - ComponentID: " + id);
-      
-      std::vector<std::string> idTokenised = Helpers::tokenise(id, ',');
-      for (int i=0;i<idTokenised.size();++i)
-      {
-         if (i == 0) {
-            if (idTokenised[i] == "REMOVE") // CELL's "REMOVE" button pressed
-            {
-               DBG("PlaylistComponent::buttonClicked: removing element: " + idTokenised[1]);
-               trackTitles.erase(trackTitles.begin() + std::stoi(idTokenised[1]));
-               loadedFiles.erase(loadedFiles.begin() + std::stoi(idTokenised[1]));
-               tableComponet.updateContent();
-
-               trackTitlesOriginal = trackTitles; // Makes a copy to use it when calling SEARCH
-               loadedFilesOriginal = loadedFiles; // Makes a copy to use it when calling SEARCH
-            }
-         }
-         // LOAD playlist item to DECK 1
-         if (idTokenised[i] == "PLAY-L")
-         {
-            DBG("PlaylistComponent::buttonClicked: sending file: "+ idTokenised[1] + " to DECK1: " );
-            int index = std::stoi(idTokenised[1]);
-            deck1->loadIncomingFile(loadedFiles[index]);
-            
-         }
-         // LOAD playlist item to DECK 2
-         if (idTokenised[i] == "PLAY-R")
-         {
-            DBG("PlaylistComponent::buttonClicked: sending file: " + idTokenised[1] + "to DECK2: ");
-            int index = std::stoi(idTokenised[1]);
-            deck2->loadIncomingFile(loadedFiles[index]);
-
-         }
-      }
-   }
 }
 
 void PlaylistComponent::timerCallback()
@@ -307,9 +197,21 @@ void PlaylistComponent::timerCallback()
       newFileAdded = true;
 
       juce::File chosenFile(toBeUploadedQueue.front());
-      sendFileData(chosenFile);
-      loadingThumbnail = true;
+      
+      std::ifstream f(toBeUploadedQueue.front()); // TESTING FILE PATH - if incorrect it will not be processed (WIP)
+      if (f.is_open())
+      {
+         sendFileData(chosenFile);
+         loadingThumbnail = true;
+      }
+      
+      else
+      {
+         DBG("ERROR PlaylistComponent::timerCallback() - ERROR: BAD PATH!\n");
+
+      };
       toBeUploadedQueue.pop();
+      
    };
 
 
@@ -340,10 +242,9 @@ void PlaylistComponent::timerCallback()
       wavefromDisplay.tracksBeingLoaded.pop();
       repaint();
       
-      addFileButton.setButtonText(addFileButtonText);
+      loadFilesButton.setButtonText(addFileButtonText);
 
-      trackTitlesOriginal = trackTitles; // Makes a copy to use it when calling SEARCH
-      loadedFilesOriginal = loadedFiles; // Makes a copy to use it when calling SEARCH
+      updateAndSavePlaylistData();
    }
 
    // THUMBNAIL LOADING PROGRESS 
@@ -352,7 +253,7 @@ void PlaylistComponent::timerCallback()
       std::string s = "Pleas wait...File load progress: ";
       s.append(std::to_string(wavefromDisplay.thumbnailLoadProgress));
       s.append("%");
-      addFileButton.setButtonText(s);
+      loadFilesButton.setButtonText(s);
    }
 }
 
@@ -388,8 +289,8 @@ void PlaylistComponent::textEditorTextChanged(juce::TextEditor& t)
    
    searchedTrackTitles.clear();
    searchedloadedFiles.clear();
-   trackTitles = trackTitlesOriginal;  
-   loadedFiles = loadedFilesOriginal;
+   trackTitles = trackTitlesMain;  
+   loadedFiles = loadedFilesMain;
 
    for (int i = 0; i < trackTitles.size(); ++i)
    {
@@ -408,4 +309,141 @@ void PlaylistComponent::textEditorTextChanged(juce::TextEditor& t)
    loadedFiles = searchedloadedFiles;
    tableComponet.updateContent();
    
+}
+
+void PlaylistComponent::saveThePlaylist()
+{
+   // SAVING PLAYLIST ON THE DISK (WIP
+      // Open an output file stream  /// REFERENCE: https://stackoverflow.com/questions/6406356/how-to-write-vector-values-to-a-file
+   std::ofstream f("./playlist.txt");
+
+   // Check if the file is open
+   if (f.is_open())
+   {
+      // Loop through the vector elements
+      for (const auto& s : loadedFiles)
+      {
+         // Write each element to the file with a newline character
+         f << s.getFullPathName() << '\n';
+      }
+
+      // Close the file
+      f.close();
+   }
+   else
+   {
+      // Print an error message if the file cannot be opened
+      DBG("Unable to open output file\n");
+   }
+}
+
+
+void PlaylistComponent::loadThePlaylist()
+{
+   // Open an input file stream
+   std::ifstream f("playlist.txt");
+
+// Check if the file is open
+   if (f.is_open())
+   {
+      // Create a string variable to store each line
+      std::string s;
+
+      // Loop through the file lines
+      while (getline(f, s))
+      {
+         // Push each line into the vector
+         paths.push_back(s);
+      }
+
+      // Close the file
+      f.close();
+   }
+   else
+   {
+      // Print an error message if the file cannot be opened
+      DBG("Unable to open input file\n");
+   }
+}
+
+
+void PlaylistComponent::updateAndSavePlaylistData()
+{
+   trackTitlesMain = trackTitles; // Makes a copy to use it when calling SEARCH
+   loadedFilesMain = loadedFiles; // Makes a copy to use it when calling SEARCH
+
+   saveThePlaylist();
+}
+
+juce::Component* PlaylistComponent::createButtonInsideCell(int selectedColumn, std::string buttonLabel, std::string idElement, juce::Component* existingComponentToUpdate, int rowNumber, int columnId)
+{
+   if (columnId == selectedColumn )
+   {
+      if (existingComponentToUpdate == nullptr)
+      {
+         juce::TextButton* btn = new juce::TextButton{ buttonLabel };
+         juce::String id{ idElement + "," + std::to_string(rowNumber) };
+         btn->setComponentID(id);
+
+         btn->addListener(this);
+         existingComponentToUpdate = btn;
+      }
+   }
+
+   return existingComponentToUpdate;
+}
+
+void PlaylistComponent::createClearPlaylistAlertWindow() {
+   // Create an AlertWindow 
+   juce::AlertWindow* alert = new juce::AlertWindow("", "", juce::AlertWindow::QuestionIcon);
+
+   alert->showOkCancelBox(juce::AlertWindow::NoIcon,
+      "Remove the playlist",
+      "Do you want to remove all tracks in the playlist?",
+      "OK",
+      "Cancel",
+      this,
+      juce::ModalCallbackFunction::create([=](int result)
+         {
+            // Check if the user clicked OK
+            if (result == 1)
+            {
+               trackTitles.clear();
+               loadedFiles.clear();
+
+               updateAndSavePlaylistData();
+               tableComponet.updateContent();
+            }
+   // Delete the alert window object
+   delete alert;
+         }));
+}
+
+void PlaylistComponent::addNewFiles()
+{
+   wavefromDisplay.newFileLoaded = false;
+   newFileAdded = true; //FLAG to let know timer that we are initated the process of adding add new file
+
+   if (!(loadedFilesMain.empty() || trackTitles.empty())) // UPDATES
+   {
+      // Updates the main data base of the loaded tracks - when search is used then sub vectors are created - it is necessary to store the original list before search initated to be able to restore it once search finished
+      trackTitles = trackTitlesMain;
+      loadedFiles = loadedFilesMain;
+
+      // New tracks added - it is necessary to update the dispaly of the playlist table
+      tableComponet.updateContent();
+   }
+
+
+   // FILES CHOOSER 
+   auto fileChooserFlags = juce::FileBrowserComponent::canSelectMultipleItems;// - configure the dialogue
+   player->fChooser.launchAsync(fileChooserFlags, [this](const juce::FileChooser& chooser)// LAMBDA FUNCTION- launch out of the main thread
+      {
+         juce::Array<juce::File> chosenFiles = chooser.getResults();
+   for (auto& file : chosenFiles)
+   {
+      toBeUploadedQueue.push((file.getFullPathName().toStdString()));
+   }
+      }
+   );
 }

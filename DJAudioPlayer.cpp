@@ -57,7 +57,7 @@ void DJAudioPlayer::loadURL(juce::URL audioURL)
     }
     else
     {
-        DBG("ERROR loading a file!");
+        DBG("DJAudioPlayer::loadURL  -- ERROR loading a file!");
     }
 };
 

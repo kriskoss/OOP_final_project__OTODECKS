@@ -20,7 +20,8 @@
 */
 //WaveformDisplay.h
 class WaveformDisplay : public juce::Component,
-                        public juce::ChangeListener
+                        public juce::ChangeListener,
+                        
    {
    public:
        WaveformDisplay(

@@ -32,7 +32,6 @@ public:
       juce::AudioThumbnailCache & cacheToUse
    );
    ~DeckGUI() override;
-
    void paint (juce::Graphics&) override;
    void resized() override;
 
