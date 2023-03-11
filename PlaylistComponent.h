@@ -3,7 +3,7 @@
 
     PlaylistComponent.h
     Created: 28 Feb 2023 2:30:35pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
@@ -75,7 +75,7 @@ private:
 
 
    void timerCallback() override;
-   int timerStep = 500;
+   int timerStep = 200;
    
    
    std::vector<std::string> trackTitles; 

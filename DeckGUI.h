@@ -3,7 +3,7 @@
 
     DeckGUI.h
     Created: 19 Feb 2023 4:39:51pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
@@ -17,6 +17,8 @@
 //==============================================================================
 /*
 */
+
+
 
 //DeckGUI.h
 class DeckGUI  : public juce::Component,
@@ -47,10 +49,17 @@ public:
    /** loads file sent from the playlist into the deck*/
    void loadIncomingFile(juce::File & sentFile); 
 
+   enum class PlayerState { play, pause, stop };
+   PlayerState playerState;
+   juce::TextButton playPauseButton{ "X" };
+
+   /**Stops the player and reset the the current posiotion to 0 */
+   void stopAndReset();
+
 private:
 
    juce::TextButton stopButton{ "STOP" };
-   juce::TextButton playPauseButton{ "PLAY/PAUSE" };
+   
    juce::Slider gainSlider;
    juce::Slider speedSlider;
    juce::Slider posSlider;
@@ -61,17 +70,21 @@ private:
 
    WaveformDisplay wavefromDisplay;
 
-
    /// MY ADDITIONS
+   
+   
+   bool mouseDown = false;
+   bool mouseDragging = false;
+   
    juce::TextButton fadeInPLAY{ "PLAY (FADE-IN)" };
    juce::TextButton fadeOutSTOP{ "STOP (FADE-OUT)" };
 
    juce::ToggleButton atStartAndEndOnly{ "Start/End only" };
 
-   float fadeInTime = 5; //seconds
+   float fadeInTime = 2; //seconds
    float fadeOutTime = fadeInTime;
 
-   int timerStep = 1000; // milliseconds
+   int timerStep = 10; // milliseconds
    
    int fadeInSteps = fadeInTime*1000/timerStep; // converitng fadeInTime into number of steps of the counter
    int fadeOutSteps = fadeInSteps;
@@ -86,8 +99,10 @@ private:
    double gainStep;
    bool approachingEnd{ false };
    
-   /**Stops the player and reset the the current posiotion to 0 */
-   void stopAndReset();
+   float mouseXRelativeDragOverWaveform = -1.0f;
+   
 
+   
+   
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)
 };

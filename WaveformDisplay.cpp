@@ -3,7 +3,7 @@
 
     WaveformDisplay.cpp
     Created: 24 Feb 2023 2:55:55pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
@@ -20,7 +20,7 @@ WaveformDisplay::WaveformDisplay(juce::AudioFormatManager& formatManagerToUse,
                                  position(0)
 {
    audioThumb.addChangeListener(this);
-
+   addMouseListener(this, false);
 }
 
 WaveformDisplay::~WaveformDisplay()
@@ -165,4 +165,37 @@ bool WaveformDisplay::checkIfThumbnailFullyLoaded()
    }
 
    return audioThumb.isFullyLoaded();
+}
+
+void WaveformDisplay::mouseDrag(const juce::MouseEvent& e) 
+{
+   //DBG("Mouse button " + std::to_string(e.mouseButton) + " pressed at (" + std::to_string(e.x) + ", " + std::to_string(e.y) + ") with modifiers: " );
+   //DBG("WaveformDisplay::mouseDown" + std::to_string(e.x));
+   mousePosX = e.x;
+   mouseIsDraggingOverWaveform = true;
+}
+
+void WaveformDisplay::mouseDown(const juce::MouseEvent& e)
+{
+   mousePosX = e.x;
+   mouseIsDown = true;
+}
+void WaveformDisplay::mouseUp(const juce::MouseEvent & e)
+{
+   mouseIsDraggingOverWaveform = false;
+   mouseIsDown = false;
+}
+
+bool WaveformDisplay::checkIfMouseDown()
+{
+   return mouseIsDown;
+}
+float WaveformDisplay::getMousePosX()
+{
+   return mousePosX;
+}
+
+bool WaveformDisplay::getIfMouseIsDragging()
+{
+   return mouseIsDraggingOverWaveform;
 }

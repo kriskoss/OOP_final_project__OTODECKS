@@ -3,7 +3,7 @@
 
     PlaylistComponent.cpp
     Created: 28 Feb 2023 2:30:35pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
@@ -172,7 +172,9 @@ void PlaylistComponent::buttonClicked(juce::Button* button)
          DBG("PlaylistComponent::buttonClicked: sending file: "+ idTokenised[1] + " to DECK1: " );
          int index = std::stoi(idTokenised[1]);
          deck1->loadIncomingFile(loadedFiles[index]);
-            
+         
+         // RESTARTING PLAYER in DECK 1 when new file loaded
+         deck1->stopAndReset();
       }
       // LOAD playlist item to DECK 2
       if (idTokenised[i] == loadToDeck2ID)
@@ -180,10 +182,12 @@ void PlaylistComponent::buttonClicked(juce::Button* button)
          DBG("PlaylistComponent::buttonClicked: sending file: " + idTokenised[1] + "to DECK2: ");
          int index = std::stoi(idTokenised[1]);
          deck2->loadIncomingFile(loadedFiles[index]);
+         
+         // RESTARTING PLAYER in DECK 2 when new file loaded
+         deck2->stopAndReset();
 
       }
    }
-   
 }
 
 void PlaylistComponent::timerCallback()

@@ -3,7 +3,7 @@
 
       WaveformDisplay.h
       Created: 24 Feb 2023 2:55:55pm
-      Author:  krzys
+      Author:  Candidate No. EX2765
 
    ==============================================================================
 */
@@ -21,7 +21,7 @@
 //WaveformDisplay.h
 class WaveformDisplay : public juce::Component,
                         public juce::ChangeListener,
-                        
+                        public juce::MouseListener
    {
    public:
        WaveformDisplay(
@@ -34,6 +34,16 @@ class WaveformDisplay : public juce::Component,
        void resized() override;
 
        void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+
+       void mouseDrag(const juce::MouseEvent& e) override;
+       void mouseDown(const juce::MouseEvent& e) override;
+       void mouseUp(const juce::MouseEvent& e) override;
+       bool getIfMouseIsDragging();
+       bool checkIfMouseDown();
+       bool mouseIsDown = false;
+       float mousePosX = -1;
+       float getMousePosX();
+       bool mouseIsDraggingOverWaveform = false;
 
        void loadURL(juce::URL audioURL);
        void loadURL(juce::URL audioURL, int trackNum);

@@ -3,7 +3,7 @@
 
     Helpers.h
     Created: 4 Mar 2023 1:02:18am
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */

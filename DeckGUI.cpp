@@ -3,7 +3,7 @@
 
     DeckGUI.cpp
     Created: 19 Feb 2023 4:39:51pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
@@ -24,7 +24,6 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    addAndMakeVisible(playPauseButton);
    addAndMakeVisible(gainSlider);
    addAndMakeVisible(speedSlider);
-   addAndMakeVisible(posSlider);
    addAndMakeVisible(loadButton);
    addAndMakeVisible(wavefromDisplay);
    
@@ -39,7 +38,6 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    playPauseButton.addListener(this);
    gainSlider.addListener(this);
    speedSlider.addListener(this);
-   posSlider.addListener(this);
    loadButton.addListener(this);
 
    atStartAndEndOnly.addListener(this);
@@ -48,6 +46,8 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    fadeOutSTOP.addListener(this);
 
 
+   playerState = PlayerState::stop;
+
    // SLIDERS PARAMETERS
    gainSlider.setRange(0, 1); 
    gainSlider.setValue(initialGainValue);
@@ -55,7 +55,7 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    speedSlider.setRange(0.1, 5);
    speedSlider.setValue(1);
 
-   posSlider.setRange(0, 1);
+
    startTimer(timerStep);
    
 }
@@ -67,13 +67,7 @@ DeckGUI::~DeckGUI()
 
 void DeckGUI::paint (juce::Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
-
-       You should replace everything in this method with your own
-       drawing code..
-    */
-
+ 
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
     //g.setColour (juce::Colours::grey);
@@ -100,7 +94,6 @@ void DeckGUI::resized()
     stopButton.setBounds(0, 2 * rowH, getWidth(), rowH);
     gainSlider.setBounds(0, 3 * rowH, getWidth(), rowH);
     speedSlider.setBounds(0, 4 * rowH, getWidth(), rowH);
-    posSlider.setBounds(0, 5 * rowH, getWidth(), rowH);
     wavefromDisplay.setBounds(0, 6 * rowH, getWidth(), rowH*2);
     loadButton.setBounds(0, 8* rowH, getWidth(), rowH);
     atStartAndEndOnly.setBounds(0, 9 * rowH, 120, rowH);
@@ -116,6 +109,8 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
    {
       if (!player->isPlaying()) //PLAY
       {
+         
+
          // BEGINING FADE-IN START
          if ((atStartAndEndOnly.getToggleState() && player->getPositionRelative() == 0))
          {
@@ -133,12 +128,15 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
             fadeInCounter = fadeInSteps;
             gainSlider.setValue(0);
             player->start();
-            button->setButtonText("PAUSE");
+            /*button->setButtonText("PAUSE");*/
+            playerState = PlayerState::play;
          }
          else // IMMEDIATE START
          {
             player->start();
-            button->setButtonText("PAUSE");
+            playerState = PlayerState::play;
+            
+            /*button->setButtonText("PAUSE");*/
             fadeInCounter = 0;
             fadeOutCounter = 0;
             lastGainInValue = gainSlider.getValue();
@@ -147,8 +145,10 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
       }
       else    // IMMEDIATE PAUSE
       {
+         playerState = PlayerState::pause;
          player->stop();
-         button->setButtonText("PLAY");
+         //button->setButtonText("PLAY");
+         playerState = PlayerState::pause;
          fadeInCounter = 0;
          fadeOutCounter = 0;
          gainSlider.setValue(lastGainInValue);
@@ -157,6 +157,7 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
 
    if (button == &stopButton)
    {
+      playerState = PlayerState::stop;
       stopAndReset();
 
    }
@@ -165,8 +166,8 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
    {
       DBG("   * playButton!   MainComponent::buttonClicked");
       player->start();
-      playPauseButton.setButtonText("PAUSE");
-
+      playerState = PlayerState::play;
+    
       // FADE IN activation logic - runs only when FADE-IN ticked, or if at the beginning of the file in case START/END only ticked
       
 
@@ -211,10 +212,10 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
        }
        else 
        {
-          {
-             if (fadeOutCounter == 0)
-                player->stop();
-          }
+         if (fadeOutCounter == 0)
+         player->stop();
+         playerState = PlayerState::stop;
+          
        }
    }
 
@@ -227,25 +228,25 @@ void DeckGUI::buttonClicked(juce::Button* button) //---A4---MOVED from MainCompo
        auto fileChooserFlags = juce::FileBrowserComponent::canSelectFiles;
        
        
-       /// ==== FOR DEVELOPMENT ONLY!!!!!!!!!
+       /*/// ==== WIP -FOR DEVELOPMENT ONLY!!!!!!!!!
        juce::File myfile("C:/_MOJE/_1_MOJE/CS Computer Science/UoL/2022 October/OOP/uol_oop_tracks/tracks/aon_inspired.mp3");
        juce::URL chosenFile(myfile);
        player->loadURL(juce::URL{ chosenFile });
-       wavefromDisplay.loadURL(juce::URL{ chosenFile });
+       wavefromDisplay.loadURL(juce::URL{ chosenFile });*/
 
 
-       //player->fChooser.launchAsync( // LAMBDA FUNCTION- launch out of the main thread
-       //    fileChooserFlags, 
-       //    [this](const juce::FileChooser& chooser)
-       //    {
-       //        juce::File chosenFile = chooser.getResult();
-       //        
-       //        player->loadURL(juce::URL{ chosenFile });
-       //        wavefromDisplay.loadURL(juce::URL{ chosenFile });
-       //    }
-       //);
+       player->fChooser.launchAsync( // LAMBDA FUNCTION- launch out of the main thread
+           fileChooserFlags, 
+           [this](const juce::FileChooser& chooser)
+           {
+               juce::File chosenFile = chooser.getResult();
+               
+               player->loadURL(juce::URL{ chosenFile });
+               wavefromDisplay.loadURL(juce::URL{ chosenFile });
+           }
+       );
        
-       //^^^^^^^^^^^^^END^^^^^^^^^^^^^^^^^^^^
+
    }
 
 }
@@ -261,11 +262,7 @@ void DeckGUI::sliderValueChanged(juce::Slider* slider) //---A4---MOVED from Main
       {
           player->setSpeed(slider->getValue());
       }
-
-      if (slider == &posSlider)
-      {
-          player->setPositionRelative(slider->getValue());
-      }
+     
 }
 
 
@@ -293,82 +290,147 @@ void DeckGUI::filesDropped(const juce::StringArray& files, int x, int y)
 
 void DeckGUI::timerCallback()
 {
-      wavefromDisplay.setPositionRelative(
+   if (playerState==PlayerState::stop)
+   {
+      playPauseButton.setButtonText("STOP STATE - PLAY/PAUSE");
+   }
+   if (playerState == PlayerState::play)
+   {
+      playPauseButton.setButtonText("PLAY STATE - PAUSE");
+      playPauseButton.setAlpha(1);
+   }
+   
+   if (playerState == PlayerState::pause)
+   {
+      playPauseButton.setButtonText("PAUSE STATE - PLAY");
+   }
+
+   // UPDATES PLAYHEAD POSITION TO THE PLAYER POSITION   
+   wavefromDisplay.setPositionRelative(
          player->getPositionRelative());
+      
 
-      /// FADE IN - counter
-      if (fadeInCounter > 0)
+   // UPDATES PLAYHEAD POSITION TO MOUSE POSITON
+   if (wavefromDisplay.getIfMouseIsDragging() || wavefromDisplay.checkIfMouseDown())
+   {
+      mouseXRelativeDragOverWaveform = wavefromDisplay.getMousePosX() / wavefromDisplay.getWidth();
+      player->setPositionRelative(mouseXRelativeDragOverWaveform);
+   }
+
+
+   //========= DRAGGING PLAYHEAD LOGIC ============
+   // WHEN MOUSE BUTTON HELD PRESSED OVER THE WAVEFORM - PLAYING PAUSES
+   if (wavefromDisplay.checkIfMouseDown())
+   {
+      player->stop();
+      playerState = PlayerState::pause;
+      mouseDown = true;
+   }
+
+   // WHEN MOUSE BUTTOBN RELEASED - PLAYER PLAYS AGAIN only IF WAS PLAYING BEFORE
+   if (!wavefromDisplay.checkIfMouseDown() && mouseDown && playerState == PlayerState::play)
+   {
+      mouseDown = false;
+      player->start();
+      playerState = PlayerState::play;
+   }
+   
+   // WHEN MOUSE IS DRAGGED - then the player playes
+   if (wavefromDisplay.getIfMouseIsDragging() )
+   {
+      player->start();
+      playerState = PlayerState::play;
+      mouseDown = true;
+      mouseDragging = true;
+   }
+
+   // WHEN MOUSE DRAGGED - if was PLAYING BEFORE then it will continue playing, otherwise PLAYING WILL PAUSE or STOP DEPENDING ON PREVIOUS STATE
+   if (!wavefromDisplay.getIfMouseIsDragging() && mouseDragging && playerState!=PlayerState::play)
+   {
+      mouseDragging = false;
+      player->stop();
+      playerState = PlayerState::pause;
+   }
+
+   
+
+
+   // ======== FADE IN and FADE OUT LOGIC =================
+
+   /// FADE IN - counter
+   if (fadeInCounter > 0)
+   {
+      fadeInCounter--;
+      DBG("DeckGUI::timerCallback-> FADE IN: " + std::to_string(fadeInCounter));
+
+      if (fadeInCounter == 0)
       {
-         fadeInCounter--;
-         DBG("DeckGUI::timerCallback-> FADE IN: " + std::to_string(fadeInCounter));
-
-         if (fadeInCounter == 0)
-         {
-            gainSlider.setValue(lastGainInValue); // Resetting gain value to the one just before fade in counter initialized (just before play button pressed)
-         }
-         else
-         {
-            //Gain increased to create FADE IN effect
-            double newGainValue = gainSlider.getValue() + gainStep;
+         gainSlider.setValue(lastGainInValue); // Resetting gain value to the one just before fade in counter initialized (just before play button pressed)
+      }
+      else
+      {
+         //Gain increased to create FADE IN effect
+         double newGainValue = gainSlider.getValue() + gainStep;
             
-            // Updates the slider valeu to match the current gain value
-            gainSlider.setValue(newGainValue);
-         }
+         // Updates the slider valeu to match the current gain value
+         gainSlider.setValue(newGainValue);
       }
+   }
 
-      // FADE OUT counter
-      if (fadeOutCounter > 0)
+   // FADE OUT counter
+   if (fadeOutCounter > 0)
+   {
+      fadeOutCounter--;
+
+      if (fadeOutCounter == 0)
       {
-         fadeOutCounter--;
-
-         if (fadeOutCounter == 0)
-         {
-            // Player stops when FADE OUT complete
-            player->stop();
-            playPauseButton.setButtonText("PLAY");
+         // Player stops when FADE OUT complete
+         player->stop();
+         playerState = PlayerState::pause;
             
-            // Resets the slider value to the one before FADE OUT started
-            gainSlider.setValue(lastGainOutValue);
-            approachingEnd = false;
-         }
-         else
-         {
-            //Gain reduced to create FADE OUT effect
-            double newGainValue = gainSlider.getValue() - gainStep;
+         // Resets the slider value to the one before FADE OUT started
+         gainSlider.setValue(lastGainOutValue);
+         approachingEnd = false;
+      }
+      else
+      {
+         //Gain reduced to create FADE OUT effect
+         double newGainValue = gainSlider.getValue() - gainStep;
             
-            // Updates the slider valeu to match the current gain value
-            gainSlider.setValue(newGainValue);
-         }
+         // Updates the slider valeu to match the current gain value
+         gainSlider.setValue(newGainValue);
       }
+   }
 
+   // END FADE-OUT
+      // FADE OUT initialization at the END
+   if (player->timeToEnd()<fadeOutTime && player->timeToEnd()>0 && atStartAndEndOnly.getToggleState()&& !approachingEnd)
+   {
+      approachingEnd = true;
+      lastGainOutValue = gainSlider.getValue();
+      fadeOutCounter = ceil(player->timeToEnd() * 1000 / timerStep);
+      fadeInCounter = 0; // stops FADE IN in case it runs when FADE OUT initiated
+      DBG("DecKGUI::timecaller   FADEing OUT - END" );
+   }
 
-      // END FADE-OUT
-         // FADE OUT initialization at the END
-      if (player->timeToEnd()<fadeOutTime && player->timeToEnd()>0 && atStartAndEndOnly.getToggleState()&& !approachingEnd)
-      {
-         approachingEnd = true;
-         lastGainOutValue = gainSlider.getValue();
-         fadeOutCounter = ceil(player->timeToEnd() * 1000 / timerStep);
-         fadeInCounter = 0; // stops FADE IN in case it runs when FADE OUT initiated
-         DBG("DecKGUI::timecaller   FADEing OUT - END" );
-      }
-
-      if (player->getPositionRelative() >0.99f)
-      {
-         stopAndReset();
-      }
+   if (player->getPositionRelative() >0.99f)
+   {
+      stopAndReset();
+   }
 }
 
 void DeckGUI::stopAndReset()
 {
+   
    player->setPosition(0);
-   posSlider.setValue(0);
+   
+   fadeInCounter = 0;
    fadeInCounter = 0;
    fadeOutCounter = 0;
    gainSlider.setValue(lastGainInValue);
 
    player->stop();
-   playPauseButton.setButtonText("PLAY/PAUSE");
+   playerState = PlayerState::stop;
 }
 
 void DeckGUI::loadIncomingFile(juce::File & sentFile)

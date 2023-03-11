@@ -3,7 +3,7 @@
 
     DJAudioPlayer.h
     Created: 5 Feb 2023 11:48:51pm
-    Author:  krzys
+    Author:  Candidate No. EX2765
 
   ==============================================================================
 */
