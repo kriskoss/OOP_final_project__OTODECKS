@@ -88,7 +88,6 @@ void SpectrogramComponent::timerCallback()
       repaint();
       
    }
-   DBG("SpectrogramComponent::timerCallback(): moving? " + std::to_string(spectogramMoving));
 }
 
 void SpectrogramComponent::pushNextSampleIntoFifo(float sample) noexcept

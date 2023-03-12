@@ -123,10 +123,6 @@ void PlaylistComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId
 
 juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber, int columnId,bool isRowSelected,juce::Component* existingComponentToUpdate)
 {
-   if (columnId==1)
-   {
-      DBG("*****  PlaylistComponent::createButtonInsideCell:   rowNUM:" + std::to_string(rowNumber));
-   }
    // Create "Load to Deck1" buttons
       existingComponentToUpdate = createButtonInsideCell(1,"LOAD to DECK1", loadToDeck1ID, existingComponentToUpdate, rowNumber, columnId);
 
