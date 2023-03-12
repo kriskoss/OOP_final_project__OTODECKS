@@ -13,11 +13,11 @@
 #include "DeckGUI.h"
 
 //==============================================================================
-DeckGUI::DeckGUI(DJAudioPlayer* _player,
+DeckGUI::DeckGUI(Settings *_settings, DJAudioPlayer* _player,
                juce::AudioFormatManager & formatManagerToUse,
                juce::AudioThumbnailCache & cacheToUse
-) :player(_player),
-wavefromDisplay( formatManagerToUse, cacheToUse)
+):settings(_settings),player(_player),
+wavefromDisplay(settings,formatManagerToUse, cacheToUse)
 
 {
    addAndMakeVisible(stopButton);
@@ -32,6 +32,18 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    addAndMakeVisible(fadeInPLAY);
    addAndMakeVisible(fadeOutSTOP);
    
+   //getLookAndFeel().setColour(juce::Slider::thumbColourId, juce::Colours::red);
+   //otherLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::red);
+   gainSlider.setLookAndFeel(&myLookAndFeel);
+   gainSlider.setSliderStyle (juce::Slider::Rotary);
+   speedSlider.setSliderStyle (juce::Slider::Rotary);
+   gainSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+   speedSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+
+   fadeInPLAY.setLookAndFeel(&myLookAndFeel);
+   fadeOutSTOP.setLookAndFeel(&myLookAndFeel);
+   
+
 
    //LISTENERS  //---A5--- ADDING LISTENERS
    stopButton.addListener(this);
@@ -52,7 +64,7 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
    gainSlider.setRange(0, 1); 
    gainSlider.setValue(initialGainValue);
 
-   speedSlider.setRange(0.1, 5);
+   speedSlider.setRange(0, 2);
    speedSlider.setValue(1);
 
 
@@ -63,21 +75,16 @@ wavefromDisplay( formatManagerToUse, cacheToUse)
 DeckGUI::~DeckGUI()
 {
    stopTimer();
+   setLookAndFeel(nullptr);
 }
 
 void DeckGUI::paint (juce::Graphics& g)
 {
  
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
-
-    //g.setColour (juce::Colours::grey);
-    //g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
-
-    //g.setColour (juce::Colours::white);
-    //g.setFont (14.0f);
-    //g.drawText ("DeckGUI", getLocalBounds(),
-    //            juce::Justification::centred, true);   // draw some placeholder text
-
+    g.fillAll(deckBackgroundColor);
+    
+    
     
 }
 
@@ -86,17 +93,24 @@ void DeckGUI::resized()
      DBG("DeckGUI::resized");
     double rowH = getHeight() / 10;
     
-    playPauseButton.setBounds(0, 0, getWidth(), rowH);
-
-    fadeInPLAY.setBounds(0, rowH, getWidth() / 2, rowH);
-    fadeOutSTOP.setBounds(getWidth() / 2, rowH, getWidth() / 2, rowH);
-
-    stopButton.setBounds(0, 2 * rowH, getWidth(), rowH);
-    gainSlider.setBounds(0, 3 * rowH, getWidth(), rowH);
-    speedSlider.setBounds(0, 4 * rowH, getWidth(), rowH);
-    wavefromDisplay.setBounds(0, 6 * rowH, getWidth(), rowH*2);
-    loadButton.setBounds(0, 8* rowH, getWidth(), rowH);
-    atStartAndEndOnly.setBounds(0, 9 * rowH, 120, rowH);
+    int xu = getWidth() / 10;
+    int yu = rowH / 10;
+    
+    playPauseButton.setBounds(1*xu, 1*yu, 6*xu, rowH*0.8);
+    stopButton.setBounds(7.5*xu, 1 * yu, 2*xu, rowH*0.8);
+    
+    fadeInPLAY.setBounds(1.1*xu, 11*yu, 3*xu, 8*yu);
+    fadeOutSTOP.setBounds(4.1*xu, 11*yu, 3*xu, rowH * 0.8);
+    atStartAndEndOnly.setBounds(7.5*xu, rowH * 1.1, 120, rowH*0.8);
+    wavefromDisplay.setBounds(0, 2 * rowH, getWidth(), rowH * 3);
+    
+    
+    gainSlider.setBounds(0, 5.2 * rowH, 5 * xu, 4*rowH);
+    speedSlider.setBounds(5 * xu, 5* rowH, 5*xu, 4.7*rowH);
+    loadButton.setBounds(4 * xu, 5.1 * rowH, 2 * xu, rowH * 0.8);
+    
+    
+    
 }
 
 
@@ -323,23 +337,22 @@ void DeckGUI::timerCallback()
    if (wavefromDisplay.checkIfMouseDown())
    {
       player->stop();
-      playerState = PlayerState::pause;
+      //playerState = PlayerState::pause;
       mouseDown = true;
    }
 
    // WHEN MOUSE BUTTOBN RELEASED - PLAYER PLAYS AGAIN only IF WAS PLAYING BEFORE
+      // ** no change in the playerState! **
    if (!wavefromDisplay.checkIfMouseDown() && mouseDown && playerState == PlayerState::play)
    {
       mouseDown = false;
-      player->start();
-      playerState = PlayerState::play;
+      player->start();     
    }
    
    // WHEN MOUSE IS DRAGGED - then the player playes
    if (wavefromDisplay.getIfMouseIsDragging() )
    {
       player->start();
-      playerState = PlayerState::play;
       mouseDown = true;
       mouseDragging = true;
    }
@@ -349,7 +362,6 @@ void DeckGUI::timerCallback()
    {
       mouseDragging = false;
       player->stop();
-      playerState = PlayerState::pause;
    }
 
    

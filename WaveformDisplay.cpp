@@ -13,8 +13,10 @@
 
 //==============================================================================
 //WaveformDisplay.cpp
-WaveformDisplay::WaveformDisplay(juce::AudioFormatManager& formatManagerToUse,
+WaveformDisplay::WaveformDisplay(Settings* _settings,
+                                 juce::AudioFormatManager& formatManagerToUse,
                                  juce::AudioThumbnailCache& cacheToUse):
+                                 settings(_settings),
                                  audioThumb(1000,formatManagerToUse,cacheToUse),
                                  anyFileLoaded(false),
                                  position(0)
@@ -39,9 +41,14 @@ void WaveformDisplay::paint (juce::Graphics& g)
 
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
 
-    g.setColour (juce::Colours::yellow);
-    if (anyFileLoaded)
+    g.setColour (waveformColor);
+    // FILE LOADED
+    int playheadWidth = getWidth() / 200;
+    int posXRelative = 0;
+
+    if (anyFileLoaded) 
     {
+       //Draw wavefrom
        audioThumb.drawChannel(g,
           getLocalBounds(),
           0,
@@ -49,30 +56,28 @@ void WaveformDisplay::paint (juce::Graphics& g)
           0,
           1.0f
        );
-       
-       int playheadWidth = getWidth() / 200;
-       
-       int posXRelative = 0;
-       // Prevents negative values
+
+
+       // Prevents negative values of the playhead width
        if (position * getWidth() >= 0)
        {
           posXRelative = position * getWidth();
        }
 
        // Playhead look
-       g.setColour(juce::Colours::black);
+       g.setColour(playheadColor);
        g.fillRect(posXRelative, 0, playheadWidth, getHeight());
-       
+
        //===== Area already played =====
        g.saveState();
-       
-       g.setColour(juce::Colours::grey);
+
+       g.setColour(areaBehindPlayhead);
        g.setOpacity(0.3);
        g.fillRect(0, 2, posXRelative, getHeight());
-       
+
        //=====Area to be played====
-       
-       g.setColour(juce::Colours::darkred);
+
+       g.setColour(areaToBePlayed);
        // Checks if rect after the play head is less then 0 
        int widthAfter = getWidth() - posXRelative - playheadWidth;
        if (widthAfter < 0)
@@ -81,21 +86,21 @@ void WaveformDisplay::paint (juce::Graphics& g)
        }
 
        g.fillRect(posXRelative + playheadWidth, 5, widthAfter, 3);
-       
+
        g.restoreState();
-       //^^^^^^^^^^^^^^^^^END^^^^^^^^^^^^
-       
-       
     }
     else
     {
+       g.saveState();
+       g.setColour(fileNotLoadedColor);
        g.setFont(20.0f);
        g.drawText("File not loaded yet...", getLocalBounds(),
           juce::Justification::centred, true);   // draw some placeholder text
+       g.restoreState();
     }
 
     g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
-    g.setColour (juce::Colours::grey);
+    g.setColour (juce::Colours::pink);
     
 }
 
@@ -131,12 +136,17 @@ void WaveformDisplay::loadURL(juce::URL audioURL, int _trackNum)
    DBG("WaveformDisplay::loadURL (2): LODADING TRACK " + std::to_string(_trackNum));
 }
 
+int WaveformDisplay::getTracktTotalTime()
+{
+   return audioThumb.getTotalLength();
+}
+
 void WaveformDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
    thumbnailLoadProgress =  audioThumb.getProportionComplete()*100;
    //DBG("wfd: change received! - progress" + std::to_string(thumbnailLoadProgress )+ "%");
    repaint();
-}
+   }
 
 void WaveformDisplay::setPositionRelative(double pos)
 {
@@ -198,4 +208,13 @@ float WaveformDisplay::getMousePosX()
 bool WaveformDisplay::getIfMouseIsDragging()
 {
    return mouseIsDraggingOverWaveform;
+}
+
+void WaveformDisplay::setNewFileLoadedToFalse()
+{
+   newFileLoaded = false;
+}
+bool WaveformDisplay::getNewFileLoaded()
+{
+   return newFileLoaded;
 }

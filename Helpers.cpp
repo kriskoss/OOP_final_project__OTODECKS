@@ -31,3 +31,20 @@ std::vector<std::string> Helpers::tokenise(std::string csvLine, char separator)
    return tokens;
 
 };
+
+std::string Helpers::convertTimeInSecondsToMMSS(int seconds)
+{
+   int min = seconds / 60;        // get the minutes
+   int sec = seconds % 60; // get the remaining seconds
+   std::string secs = "00";
+   if (sec < 10)
+   {
+      secs = "0" + std::to_string(sec);
+   }
+   else
+   {
+      secs= std::to_string(sec);
+   }
+   std::string result = std::to_string(min) + ":" + secs; // concatenate the strings with a colon
+   return result;
+}

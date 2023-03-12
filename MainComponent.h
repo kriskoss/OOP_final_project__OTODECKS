@@ -2,9 +2,11 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Settings.h"
 #include "DJAudioPlayer.h"
 #include "DeckGUI.h"    
 #include "PlaylistComponent.h"
+
 
     //==============================================================================
     /*
@@ -31,20 +33,21 @@ class MainComponent : public juce::AudioAppComponent
     private:
         //==============================================================================
         // Your private member variables go here...
-        
+       Settings settings;
+       
        juce::AudioFormatManager formatManager;
        juce::AudioThumbnailCache thumbCache{ 100 };
 
         DJAudioPlayer player1{formatManager};
-        DeckGUI deckGUI1{&player1, formatManager, thumbCache};     
+        DeckGUI deckGUI1{&settings,&player1, formatManager, thumbCache};     
         
         DJAudioPlayer player2{formatManager};
-        DeckGUI deckGUI2{&player2, formatManager, thumbCache};
+        DeckGUI deckGUI2{&settings,&player2, formatManager, thumbCache};
 
         juce::MixerAudioSource mixerSource;
 
         DJAudioPlayer playerPL{ formatManager };
-        PlaylistComponent playlistComponent{ &playerPL,&deckGUI1,&deckGUI2, formatManager,thumbCache };
+        PlaylistComponent playlistComponent{&settings, &playerPL,&deckGUI1,&deckGUI2, formatManager,thumbCache };
         
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
     };

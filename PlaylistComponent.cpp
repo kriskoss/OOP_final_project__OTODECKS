@@ -16,28 +16,33 @@
 
 //==============================================================================
 //PlaylistComponent.cpp
-PlaylistComponent::PlaylistComponent(DJAudioPlayer* _player,DeckGUI* _deck1,DeckGUI* _deck2,juce::AudioFormatManager& formatManagerToUse,juce::AudioThumbnailCache& cacheToUse):player(_player),  
-                                       deck1(_deck1),
-                                       deck2(_deck2),
-                                       wavefromDisplay(formatManagerToUse, cacheToUse)
+PlaylistComponent::PlaylistComponent(Settings* _settings,
+                                    DJAudioPlayer* _player,
+                                    DeckGUI* _deck1,
+                                    DeckGUI* _deck2,
+                                    juce::AudioFormatManager& formatManagerToUse,
+                                    juce::AudioThumbnailCache& cacheToUse)
+                              :settings(_settings),
+                              player(_player),  
+                              deck1(_deck1),
+                              deck2(_deck2),
+                              wavefromDisplay(_settings,formatManagerToUse, cacheToUse)
 {
-     // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
-   
-   tableComponet.getHeader().addColumn("LEFT", 1, 80);
-   tableComponet.getHeader().addColumn("Track title", 3, 400);
-   tableComponet.getHeader().addColumn("RIGHT", 4, 80);
-   tableComponet.getHeader().addColumn("Remove", 2, 80);
-
-   
+   tableComponet.getHeader().addColumn("Track title", 3, 6 * columnWidth);
+   tableComponet.getHeader().addColumn("LEFT", 1, columnWidth);
+   tableComponet.getHeader().addColumn("Total time", 5, 0.8 * columnWidth);
+   tableComponet.getHeader().addColumn("RIGHT", 4, columnWidth);
+   tableComponet.getHeader().addColumn("", 6, columnWidth);
+   tableComponet.getHeader().addColumn("Remove", 2, columnWidth*0.8);
 
    tableComponet.setModel(this);
-   
+
    addAndMakeVisible(tableComponet);
    addAndMakeVisible(loadFilesButton);
    addAndMakeVisible(searchField);
    addAndMakeVisible(clearSearchButton);
    addAndMakeVisible(clearPlaylistButton);
+   
 
    loadFilesButton.addListener(this);
    searchField.addListener(this);
@@ -51,7 +56,6 @@ PlaylistComponent::PlaylistComponent(DJAudioPlayer* _player,DeckGUI* _deck1,Deck
    toBeUploadedQueue = populateTheQueue(paths);
    
    startTimer(timerStep);
-
 }
 
 PlaylistComponent::~PlaylistComponent()
@@ -62,14 +66,8 @@ PlaylistComponent::~PlaylistComponent()
 void PlaylistComponent::paint (juce::Graphics& g)
 {
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
-
-    g.setColour (juce::Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
-
-    g.setColour (juce::Colours::white);
-    g.setFont (14.0f);
-    g.drawText ("PlaylistComponent", getLocalBounds(),
-                juce::Justification::centred, true);   // draw some placeholder text
+    g.fillAll(playlistBackgroundColor);
+    
 }
 
 void PlaylistComponent::resized()
@@ -85,32 +83,51 @@ void PlaylistComponent::resized()
 int PlaylistComponent::getNumRows()
 {
    return trackTitles.size();
+   
 }
 
 void PlaylistComponent::paintRowBackground(juce::Graphics& g,int rowNumber,int width,int height,bool rowIsSelected)
 {
    
-   if (rowIsSelected)
+   g.fillAll(juce::Colours::lightslategrey);
+   /*if (rowIsSelected)
    {
       g.fillAll(juce::Colours::orange);
    }
    else
    {
       g.fillAll(juce::Colours::darkgrey);
-   }
+   }*/
 }
 
-void PlaylistComponent::paintCell(juce::Graphics& g,int rowNumber,int columnId,int width,int height,bool rowIsSelected) 
+void PlaylistComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
 {
-   g.drawText(trackTitles[rowNumber],
-      1, 0,
-      width - 4, height,
-      juce::Justification::centred,
-      true);
+   if (columnId == 3)
+   {
+      g.drawText(trackTitles[rowNumber],
+         1, 0,
+         width - 4, height,
+         juce::Justification::centred,
+         true);
+   }
+   if (columnId==5)
+   {
+      std::string mm_ss = Helpers::convertTimeInSecondsToMMSS(trackTotalTimes[rowNumber]);
+      g.drawText(mm_ss, 
+         5, 0,
+         width - 4, height,
+         juce::Justification::centred,
+         true);
+   }
+   
 }
 
 juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber, int columnId,bool isRowSelected,juce::Component* existingComponentToUpdate)
 {
+   if (columnId==1)
+   {
+      DBG("*****  PlaylistComponent::createButtonInsideCell:   rowNUM:" + std::to_string(rowNumber));
+   }
    // Create "Load to Deck1" buttons
       existingComponentToUpdate = createButtonInsideCell(1,"Load to Deck1", loadToDeck1ID, existingComponentToUpdate, rowNumber, columnId);
 
@@ -160,6 +177,9 @@ void PlaylistComponent::buttonClicked(juce::Button* button)
             DBG("PlaylistComponent::buttonClicked: removing element: " + idTokenised[1]);
             trackTitles.erase(trackTitles.begin() + std::stoi(idTokenised[1]));
             loadedFiles.erase(loadedFiles.begin() + std::stoi(idTokenised[1]));
+            trackTotalTimes.erase(trackTotalTimes.begin() + std::stoi(idTokenised[1]));
+            
+            
             tableComponet.updateContent();
 
             updateAndSavePlaylistData();
@@ -197,7 +217,7 @@ void PlaylistComponent::timerCallback()
    /// UPLOAD STORED TRACKS
    while (!toBeUploadedQueue.empty() && !loadingThumbnail)
    {
-      wavefromDisplay.newFileLoaded = false;
+      wavefromDisplay.setNewFileLoadedToFalse();
       newFileAdded = true;
 
       juce::File chosenFile(toBeUploadedQueue.front());
@@ -207,6 +227,7 @@ void PlaylistComponent::timerCallback()
       {
          sendFileData(chosenFile);
          loadingThumbnail = true;
+         
       }
       
       else
@@ -223,7 +244,7 @@ void PlaylistComponent::timerCallback()
    //FILE OPENED SUCCESSFULLY - UPDATE PLAYLIST FOR NEW ITEM
    if (newFileAdded)
    {
-      if (wavefromDisplay.newFileLoaded)
+      if (wavefromDisplay.getNewFileLoaded())
       {
          newFileAdded = false;      // TRUE only for one iteration - only to enable table content update
          tableComponet.updateContent();
@@ -272,6 +293,9 @@ void PlaylistComponent::sendFileData(juce::File & chosenFile)
    juce::URL chosenFileURL(chosenFile);
    player->loadURL(juce::URL{ chosenFile });
    wavefromDisplay.loadURL(juce::URL{ chosenFile },trackNum);
+   int totalTime = wavefromDisplay.getTracktTotalTime();
+   trackTotalTimes.push_back(totalTime);
+   
 }
 
 std::queue<std::string> PlaylistComponent::populateTheQueue(std::vector<std::string> s_vector)
@@ -293,8 +317,10 @@ void PlaylistComponent::textEditorTextChanged(juce::TextEditor& t)
    
    searchedTrackTitles.clear();
    searchedloadedFiles.clear();
+   searchedTrackTotalTimes.clear();
    trackTitles = trackTitlesMain;  
    loadedFiles = loadedFilesMain;
+   trackTotalTimes = trackTotalTimesMain;
 
    for (int i = 0; i < trackTitles.size(); ++i)
    {
@@ -307,10 +333,13 @@ void PlaylistComponent::textEditorTextChanged(juce::TextEditor& t)
          DBG("PlaylistComponent::textEditorTextChanged: ITEMS FOUND IN " + trackTitles[i] + "[" + std::to_string(i)+"]");
          searchedTrackTitles.push_back(trackTitles[i]);
          searchedloadedFiles.push_back(loadedFiles[i]);
+         searchedTrackTotalTimes.push_back(trackTotalTimes[i]);
       }
    }
    trackTitles = searchedTrackTitles;
    loadedFiles = searchedloadedFiles;
+   trackTotalTimes = searchedTrackTotalTimes;
+
    tableComponet.updateContent();
    
 }
@@ -375,18 +404,28 @@ void PlaylistComponent::updateAndSavePlaylistData()
 {
    trackTitlesMain = trackTitles; // Makes a copy to use it when calling SEARCH
    loadedFilesMain = loadedFiles; // Makes a copy to use it when calling SEARCH
+   trackTotalTimesMain= trackTotalTimes; // Makes a copy to use it when calling SEARCH
 
    saveThePlaylist();
 }
 
 juce::Component* PlaylistComponent::createButtonInsideCell(int selectedColumn, std::string buttonLabel, std::string idElement, juce::Component* existingComponentToUpdate, int rowNumber, int columnId)
 {
+   //DBG("*****  PlaylistComponent::createButtonInsideCell:   rowNUM:" + std::to_string(rowNumber));
    if (columnId == selectedColumn )
    {
       if (existingComponentToUpdate == nullptr)
       {
          juce::TextButton* btn = new juce::TextButton{ buttonLabel };
+         
          juce::String id{ idElement + "," + std::to_string(rowNumber) };
+
+         
+         if (idElement == "REMOVE")
+         {
+            DBG("  ===  PlaylistComponent::createButtonInsideCell:   ID:" + id);
+         }
+
          btn->setComponentID(id);
 
          btn->addListener(this);
@@ -414,6 +453,7 @@ void PlaylistComponent::createClearPlaylistAlertWindow() {
             {
                trackTitles.clear();
                loadedFiles.clear();
+               trackTotalTimes.clear();
 
                updateAndSavePlaylistData();
                tableComponet.updateContent();
@@ -425,7 +465,8 @@ void PlaylistComponent::createClearPlaylistAlertWindow() {
 
 void PlaylistComponent::addNewFiles()
 {
-   wavefromDisplay.newFileLoaded = false;
+   
+   wavefromDisplay.setNewFileLoadedToFalse();
    newFileAdded = true; //FLAG to let know timer that we are initated the process of adding add new file
 
    if (!(loadedFilesMain.empty() || trackTitles.empty())) // UPDATES
@@ -433,6 +474,7 @@ void PlaylistComponent::addNewFiles()
       // Updates the main data base of the loaded tracks - when search is used then sub vectors are created - it is necessary to store the original list before search initated to be able to restore it once search finished
       trackTitles = trackTitlesMain;
       loadedFiles = loadedFilesMain;
+      trackTotalTimes = trackTotalTimesMain;
 
       // New tracks added - it is necessary to update the dispaly of the playlist table
       tableComponet.updateContent();

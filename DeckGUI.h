@@ -13,6 +13,8 @@
 #include <JuceHeader.h>
 #include "DJAudioPlayer.h" 
 #include "WaveformDisplay.h"
+#include "Settings.h"
+#include "MyLookAndFeel.h"
 
 //==============================================================================
 /*
@@ -29,10 +31,12 @@ class DeckGUI  : public juce::Component,
 
 {
 public:
-   DeckGUI(DJAudioPlayer* player,
+   DeckGUI(Settings *_settings, DJAudioPlayer* player,
       juce::AudioFormatManager & formatManagerToUse,
       juce::AudioThumbnailCache & cacheToUse
    );
+   
+   // ==== VIRTUAL FUNCTIONS ====
    ~DeckGUI() override;
    void paint (juce::Graphics&) override;
    void resized() override;
@@ -45,64 +49,66 @@ public:
    void filesDropped(const juce::StringArray& files, int x, int y) override;
 
    void timerCallback() override;
+   //==============================
+
+   /** Player states*/
+   enum class PlayerState { play, pause, stop };
+   PlayerState playerState;
    
+   // FUNCTIONS
    /** loads file sent from the playlist into the deck*/
    void loadIncomingFile(juce::File & sentFile); 
 
-   enum class PlayerState { play, pause, stop };
-   PlayerState playerState;
-   juce::TextButton playPauseButton{ "X" };
-
    /**Stops the player and reset the the current posiotion to 0 */
    void stopAndReset();
-
+   
 private:
+   Settings *settings;
+   DJAudioPlayer* player;
+   WaveformDisplay wavefromDisplay;
 
+   // Settings
+   juce::Colour deckBackgroundColor = settings->deckBackgroundColor;
+   MyLookAndFeel myLookAndFeel;
+
+   // GUI ELEMENTS
    juce::TextButton stopButton{ "STOP" };
    
    juce::Slider gainSlider;
    juce::Slider speedSlider;
    juce::Slider posSlider;
-
+   juce::TextButton playPauseButton{ "playPauseButton" };
    juce::TextButton loadButton{ "LOAD" };
 
-   DJAudioPlayer *player;  
+   juce::TextButton fadeInPLAY{ settings->fadeInPlayLabel };
+   juce::TextButton fadeOutSTOP{ settings->fadeOutStopLabel };
 
-   WaveformDisplay wavefromDisplay;
+   juce::ToggleButton atStartAndEndOnly{ settings->atStartAndEndOnlyLabel };
 
-   /// MY ADDITIONS
-   
-   
+   // FLAGS   
    bool mouseDown = false;
    bool mouseDragging = false;
    
-   juce::TextButton fadeInPLAY{ "PLAY (FADE-IN)" };
-   juce::TextButton fadeOutSTOP{ "STOP (FADE-OUT)" };
+   //Settings
+   float fadeInTime = settings->fadeInTime; //seconds
+   float fadeOutTime = settings->fadeOutTime;
 
-   juce::ToggleButton atStartAndEndOnly{ "Start/End only" };
-
-   float fadeInTime = 2; //seconds
-   float fadeOutTime = fadeInTime;
-
-   int timerStep = 10; // milliseconds
+   int timerStep = settings->deckGUItimeStep; // milliseconds
+   double initialGainValue = settings->initialGainValue;
    
+   // Data members
    int fadeInSteps = fadeInTime*1000/timerStep; // converitng fadeInTime into number of steps of the counter
    int fadeOutSteps = fadeInSteps;
 
    int fadeInCounter = 0; // the actual counter
    int fadeOutCounter = 0; // the actual counter
    
-   double initialGainValue = 0.5;
-   
-   double lastGainInValue = gainSlider.getValue();
-   double lastGainOutValue = gainSlider.getValue();
+   double lastGainInValue = initialGainValue;
+   double lastGainOutValue = initialGainValue;
    double gainStep;
    bool approachingEnd{ false };
    
    float mouseXRelativeDragOverWaveform = -1.0f;
    
-
-   
-   
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)
+   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeckGUI)
 };
