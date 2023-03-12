@@ -5,11 +5,8 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
-    // Make sure you set the size of the component after
-    // you add any child components.
     setSize (1000, 600);
 
-    // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
         && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
     {
@@ -18,41 +15,49 @@ MainComponent::MainComponent()
     }
     else
     {
-        // Specify the number of input and output channels that we want to open
         setAudioChannels (0, 2);  
     }
 
+    addAndMakeVisible(simpleFFT);
     addAndMakeVisible(deckGUI1);  
     addAndMakeVisible(deckGUI2);  
 
     addAndMakeVisible(playlistComponent);
+    
 
     formatManager.registerBasicFormats();
 }
 
 MainComponent::~MainComponent()
 {
-    // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
 
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-   //player1.prepareToPlay(samplesPerBlockExpected, sampleRate); //NO LONGER NEEDED 
-   //player2.prepareToPlay(samplesPerBlockExpected, sampleRate);
-
    mixerSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
    mixerSource.addInputSource(&player1, false); //mixerSource.addInputSource automatically calls prepareToPlay
    mixerSource.addInputSource(&player2, false);
-       
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    
-    //player1.getNextAudioBlock(bufferToFill); REPLACED
    mixerSource.getNextAudioBlock(bufferToFill);
+
+
+   // Sends data to SpectogramComponent
+   if (bufferToFill.buffer->getNumChannels() > 0)
+   {
+      auto* channelData = bufferToFill.buffer->getReadPointer(0, bufferToFill.startSample);
+
+      for (auto i = 0; i < bufferToFill.numSamples; ++i)
+      {
+         simpleFFT.pushNextSampleIntoFifo(channelData[i]);
+
+      }
+
+   }
 }
 
 void MainComponent::releaseResources()
@@ -65,48 +70,24 @@ void MainComponent::releaseResources()
 //==============================================================================
 void MainComponent::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-    
-    // You can add your drawing code here!
-    
+
+    juce::Rectangle<int> background(getWidth(), getHeight()/2);
+
+    // Fill it with a color of your choice
+    g.setColour(juce::Colours::darkslateblue);
+    g.fillRect(background);
 }
 
 void MainComponent::resized()
 {
-    // This is called when the MainContentComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
+   double rowH = (getHeight() / 2) / 10;
+   
    deckGUI1.setBounds(0, 0,getWidth()/ 2, getHeight()/2);
    deckGUI2.setBounds(getWidth() / 2, 0,getWidth()/ 2, getHeight()/2);
 
    playlistComponent.setBounds(10, getHeight()/2+10, getWidth()-20, getHeight() / 2-20);
+   simpleFFT.setBounds(0, 5*rowH, getWidth(), 5 * rowH);
+   
 }
 
-
-
-
-////SYNTHETIZER CODE - regge siren
-//void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
-//{
-//
-//    if (!playing)
-//    {
-//        bufferToFill.clearActiveBufferRegion();
-//    }
-//    else
-//    {
-//        auto* leftChannel = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
-//        auto* rightChannel = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
-//
-//        for (auto i = 0; i < bufferToFill.numSamples; ++i)
-//        {
-//            auto sample = fmod(phase, 1.0f);
-//            phase += fmod(dphase, 0.01f);
-//            dphase += 0.0000005f;
-//
-//            leftChannel[i] = sample * 0.125 * gain;
-//            rightChannel[i] = sample * 0.125 * gain;
-//        }
-//    }
-//}

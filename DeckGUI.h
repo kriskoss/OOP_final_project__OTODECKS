@@ -15,6 +15,7 @@
 #include "WaveformDisplay.h"
 #include "Settings.h"
 #include "MyLookAndFeel.h"
+#include "SpectrogramComponent.h"
 
 //==============================================================================
 /*
@@ -31,7 +32,8 @@ class DeckGUI  : public juce::Component,
 
 {
 public:
-   DeckGUI(Settings *_settings, DJAudioPlayer* player,
+   DeckGUI(Settings* _settings, DJAudioPlayer* player,
+      SpectrogramComponent *_simpleFFT,
       juce::AudioFormatManager & formatManagerToUse,
       juce::AudioThumbnailCache & cacheToUse
    );
@@ -54,6 +56,8 @@ public:
    /** Player states*/
    enum class PlayerState { play, pause, stop };
    PlayerState playerState;
+
+   SpectrogramComponent* simpleFFT;
    
    // FUNCTIONS
    /** loads file sent from the playlist into the deck*/
@@ -61,7 +65,7 @@ public:
 
    /**Stops the player and reset the the current posiotion to 0 */
    void stopAndReset();
-   
+   void updateCurrentTitle(std::string title);
 private:
    Settings *settings;
    DJAudioPlayer* player;
@@ -79,6 +83,7 @@ private:
    juce::Slider posSlider;
    juce::TextButton playPauseButton{ "playPauseButton" };
    juce::TextButton loadButton{ "LOAD" };
+   juce::Label currentTrackTitle{ "currentTrack", ""};
 
    juce::TextButton fadeInPLAY{ settings->fadeInPlayLabel };
    juce::TextButton fadeOutSTOP{ settings->fadeOutStopLabel };

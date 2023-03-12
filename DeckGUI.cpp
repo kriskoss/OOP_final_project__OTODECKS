@@ -14,9 +14,10 @@
 
 //==============================================================================
 DeckGUI::DeckGUI(Settings *_settings, DJAudioPlayer* _player,
+               SpectrogramComponent * _simpleFFT,
                juce::AudioFormatManager & formatManagerToUse,
                juce::AudioThumbnailCache & cacheToUse
-):settings(_settings),player(_player),
+):settings(_settings),player(_player), simpleFFT(_simpleFFT),
 wavefromDisplay(settings,formatManagerToUse, cacheToUse)
 
 {
@@ -31,6 +32,14 @@ wavefromDisplay(settings,formatManagerToUse, cacheToUse)
    
    addAndMakeVisible(fadeInPLAY);
    addAndMakeVisible(fadeOutSTOP);
+
+   addAndMakeVisible(currentTrackTitle);
+
+   
+   currentTrackTitle.setFont(juce::Font(20.0f));
+   currentTrackTitle.setColour(juce::Label::textColourId, juce::Colours::greenyellow );
+
+   /*currentTrackTitle.setJustificationType(juce::Justification::centred);*/
    
    //getLookAndFeel().setColour(juce::Slider::thumbColourId, juce::Colours::red);
    //otherLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::red);
@@ -42,6 +51,8 @@ wavefromDisplay(settings,formatManagerToUse, cacheToUse)
 
    fadeInPLAY.setLookAndFeel(&myLookAndFeel);
    fadeOutSTOP.setLookAndFeel(&myLookAndFeel);
+   
+   this->setOpaque(false);
    
 
 
@@ -67,7 +78,6 @@ wavefromDisplay(settings,formatManagerToUse, cacheToUse)
    speedSlider.setRange(0, 2);
    speedSlider.setValue(1);
 
-
    startTimer(timerStep);
    
 }
@@ -81,11 +91,8 @@ DeckGUI::~DeckGUI()
 void DeckGUI::paint (juce::Graphics& g)
 {
  
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
-    g.fillAll(deckBackgroundColor);
-    
-    
-    
+    //g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
+    //g.fillAll(deckBackgroundColor);
 }
 
 void DeckGUI::resized()
@@ -108,6 +115,7 @@ void DeckGUI::resized()
     gainSlider.setBounds(0, 5.2 * rowH, 5 * xu, 4*rowH);
     speedSlider.setBounds(5 * xu, 5* rowH, 5*xu, 4.7*rowH);
     loadButton.setBounds(4 * xu, 5.1 * rowH, 2 * xu, rowH * 0.8);
+    currentTrackTitle.setBounds(xu*0.5, 9 * rowH, 5 * xu, rowH);
     
     
     
@@ -304,20 +312,51 @@ void DeckGUI::filesDropped(const juce::StringArray& files, int x, int y)
 
 void DeckGUI::timerCallback()
 {
-   if (playerState==PlayerState::stop)
+   
+   switch (playerState)
    {
-      playPauseButton.setButtonText("STOP STATE - PLAY/PAUSE");
+   case PlayerState::play:
+   {
+      stopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::brown);
+      playPauseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::tan);
+      playPauseButton.setButtonText("PAUSE");
+      playPauseButton.setAlpha(1);
+      simpleFFT->startSpectogram();
+      break;
+   }
+
+   case PlayerState::pause:
+   {
+      stopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::brown);
+      playPauseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkseagreen);
+      playPauseButton.setButtonText("PLAY");
+      simpleFFT->stopSpectogram();
+      break;
+   }
+   case PlayerState::stop:
+   {
+      playPauseButton.setButtonText("PLAY/PAUSE");
+      stopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::grey);
+      playPauseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkseagreen);
+      simpleFFT->stopSpectogram();
+      //simpleFFT->clearSpectogram();
+      break;
+   }
+   }
+
+   /*if (playerState==PlayerState::stop)
+   {
+      
    }
    if (playerState == PlayerState::play)
    {
-      playPauseButton.setButtonText("PLAY STATE - PAUSE");
-      playPauseButton.setAlpha(1);
+      
    }
    
    if (playerState == PlayerState::pause)
    {
-      playPauseButton.setButtonText("PAUSE STATE - PLAY");
-   }
+      
+   }*/
 
    // UPDATES PLAYHEAD POSITION TO THE PLAYER POSITION   
    wavefromDisplay.setPositionRelative(
@@ -346,7 +385,8 @@ void DeckGUI::timerCallback()
    if (!wavefromDisplay.checkIfMouseDown() && mouseDown && playerState == PlayerState::play)
    {
       mouseDown = false;
-      player->start();     
+      player->start();
+      
    }
    
    // WHEN MOUSE IS DRAGGED - then the player playes
@@ -443,6 +483,7 @@ void DeckGUI::stopAndReset()
 
    player->stop();
    playerState = PlayerState::stop;
+   simpleFFT->clearSpectogram();
 }
 
 void DeckGUI::loadIncomingFile(juce::File & sentFile)
@@ -451,4 +492,14 @@ void DeckGUI::loadIncomingFile(juce::File & sentFile)
    player->loadURL(juce::URL{ chosenFile });
    wavefromDisplay.loadURL(juce::URL{ chosenFile });
    
+}
+
+
+void DeckGUI::updateCurrentTitle(std::string title)
+{
+   std::string s = "";
+   s =s +title;
+   currentTrackTitle.setText(s,juce::dontSendNotification);
+   repaint();
+
 }

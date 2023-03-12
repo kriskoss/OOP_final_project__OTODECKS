@@ -28,10 +28,10 @@ PlaylistComponent::PlaylistComponent(Settings* _settings,
                               deck2(_deck2),
                               wavefromDisplay(_settings,formatManagerToUse, cacheToUse)
 {
-   tableComponet.getHeader().addColumn("Track title", 3, 6 * columnWidth);
-   tableComponet.getHeader().addColumn("LEFT", 1, columnWidth);
+   tableComponet.getHeader().addColumn("LEFT", 1, columnWidth * 1.3);
+   tableComponet.getHeader().addColumn("Track title", 3, 5 * columnWidth);
    tableComponet.getHeader().addColumn("Total time", 5, 0.8 * columnWidth);
-   tableComponet.getHeader().addColumn("RIGHT", 4, columnWidth);
+   tableComponet.getHeader().addColumn("RIGHT", 4, columnWidth * 1.3);
    tableComponet.getHeader().addColumn("", 6, columnWidth);
    tableComponet.getHeader().addColumn("Remove", 2, columnWidth*0.8);
 
@@ -68,6 +68,7 @@ void PlaylistComponent::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
     g.fillAll(playlistBackgroundColor);
     
+    
 }
 
 void PlaylistComponent::resized()
@@ -75,9 +76,9 @@ void PlaylistComponent::resized()
    int rowH = getHeight() / 9;
    loadFilesButton.setBounds(0,0,getWidth(), rowH);
    tableComponet.setBounds(0, rowH, getWidth(), 7*rowH);
-   searchField.setBounds(0, 8*rowH, getWidth()/3, rowH);
-   clearSearchButton.setBounds(getWidth()/3, 8 * rowH, getWidth() / 6, rowH);
-   clearPlaylistButton.setBounds(getWidth()*3/4, 8*rowH, getWidth() / 4, rowH);
+   searchField.setBounds(getWidth()*0.1, 8.1 * rowH, getWidth() / 3, rowH*0.9);
+   clearSearchButton.setBounds(getWidth()/3+ getWidth() * 0.1, 8.1 * rowH, getWidth() / 6, rowH*0.9);
+   clearPlaylistButton.setBounds(getWidth()*3/4, 8.05*rowH, getWidth() / 4, rowH);
 }
 
 int PlaylistComponent::getNumRows()
@@ -88,16 +89,14 @@ int PlaylistComponent::getNumRows()
 
 void PlaylistComponent::paintRowBackground(juce::Graphics& g,int rowNumber,int width,int height,bool rowIsSelected)
 {
-   
-   g.fillAll(juce::Colours::lightslategrey);
-   /*if (rowIsSelected)
+   if (rowNumber%2==0)
    {
-      g.fillAll(juce::Colours::orange);
+      g.fillAll(juce::Colours::lightslategrey);
    }
    else
    {
-      g.fillAll(juce::Colours::darkgrey);
-   }*/
+      g.fillAll(juce::Colours::slategrey);
+   }
 }
 
 void PlaylistComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
@@ -129,13 +128,13 @@ juce::Component* PlaylistComponent::refreshComponentForCell(int rowNumber, int c
       DBG("*****  PlaylistComponent::createButtonInsideCell:   rowNUM:" + std::to_string(rowNumber));
    }
    // Create "Load to Deck1" buttons
-      existingComponentToUpdate = createButtonInsideCell(1,"Load to Deck1", loadToDeck1ID, existingComponentToUpdate, rowNumber, columnId);
+      existingComponentToUpdate = createButtonInsideCell(1,"LOAD to DECK1", loadToDeck1ID, existingComponentToUpdate, rowNumber, columnId);
 
    // Create "REMOVE" buttons
       existingComponentToUpdate = createButtonInsideCell(2,"REMOVE", removeTrackID, existingComponentToUpdate, rowNumber, columnId);
 
    // Create "Load to Deck2" buttons
-      existingComponentToUpdate = createButtonInsideCell(4,"Load to Deck2", loadToDeck2ID, existingComponentToUpdate, rowNumber, columnId);
+      existingComponentToUpdate = createButtonInsideCell(4,"LOAD to DECK2", loadToDeck2ID, existingComponentToUpdate, rowNumber, columnId);
    
    return existingComponentToUpdate;
    
@@ -195,6 +194,7 @@ void PlaylistComponent::buttonClicked(juce::Button* button)
          
          // RESTARTING PLAYER in DECK 1 when new file loaded
          deck1->stopAndReset();
+         deck1->updateCurrentTitle(loadedFiles[index].getFileName().toStdString());
       }
       // LOAD playlist item to DECK 2
       if (idTokenised[i] == loadToDeck2ID)
@@ -205,6 +205,7 @@ void PlaylistComponent::buttonClicked(juce::Button* button)
          
          // RESTARTING PLAYER in DECK 2 when new file loaded
          deck2->stopAndReset();
+         deck2 ->updateCurrentTitle(loadedFiles[index].getFileName().toStdString());
 
       }
    }

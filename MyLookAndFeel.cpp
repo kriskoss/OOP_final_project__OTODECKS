@@ -36,7 +36,9 @@ void MyLookAndFeel::drawRotarySlider(juce::Graphics& g,
 
    // fill
    g.setColour(juce::Colours::steelblue);
+   g.setOpacity(0.5f);
    g.fillEllipse(rx, ry, rw, rw);
+   g.setOpacity(1.0f);
 
    // outline
    g.setColour(juce::Colours::olivedrab);
